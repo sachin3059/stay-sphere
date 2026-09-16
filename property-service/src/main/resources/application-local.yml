@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+
+jwt:
+  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:ddup7omgb}
+  api-key: ${CLOUDINARY_API_KEY:289443239736169}
+  api-secret: ${CLOUDINARY_API_SECRET:Ph6JzlGLvU99vC_Ld20uCuA2ux8}

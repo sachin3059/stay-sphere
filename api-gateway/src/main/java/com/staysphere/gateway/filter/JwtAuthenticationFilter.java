@@ -12,7 +12,6 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -21,27 +20,7 @@ public class JwtAuthenticationFilter
         implements GlobalFilter, Ordered {
 
     private final JwtUtil jwtUtil;
-
-    private static final List<String> PUBLIC_ROUTES = List.of(
-            "/api/auth/register",
-            "/api/auth/login",
-            "/api/auth/health",
-            "/api/properties/health",
-            "/api/properties/search",
-            "/api/properties",
-            "/api/bookings/health",
-            "/api/payments/health",
-            "/api/payments/booking",
-            "/api/pricing/health",
-            "/api/pricing/calculate",
-            "/api/pricing/rules",
-            "/api/waitlist/health",
-            "/api/waitlist/property",
-            "/api/notifications/health",
-            "/api/notifications/reference",
-            "/api/availability/health",
-            "/api/availability"
-    );
+    private final GatewayPublicRouteMatcher publicRouteMatcher;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange,
@@ -51,8 +30,7 @@ public class JwtAuthenticationFilter
 
         log.info("Gateway request: {} {}", method, path);
 
-        boolean isPublic = PUBLIC_ROUTES.stream()
-                .anyMatch(path::startsWith);
+        boolean isPublic = publicRouteMatcher.isPublic(method, path);
 
         if (isPublic) {
             return chain.filter(exchange);
@@ -79,8 +57,6 @@ public class JwtAuthenticationFilter
         log.info("JWT valid — user: {} role: {} path: {}",
                 email, role, path);
 
-        // Just pass through — don't modify headers
-        // Downstream services extract user from JWT directly
         return chain.filter(exchange);
     }
 
