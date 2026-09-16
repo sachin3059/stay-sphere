@@ -125,7 +125,7 @@ booking-service  ──► booking-events  ──► notification-service (email
                                      ──► availability-service (block dates)
                                      ──► waitlist-service (on cancellation)
 
-payment-service  ──► payment-events  ──► notification-service (payment receipt)
+payment-service  ──► payment-events  ──► booking-service (auto-confirm), notification-service (payment receipt)
 
 waitlist-service ──► waitlist-events ──► notification-service (slot available)
 ```
@@ -296,19 +296,17 @@ INDEX idx_waitlist_property ON waitlist_entries(property_id, check_in, queue_pos
         ↓
 10. payment_success event → Kafka
         ↓
-11. notification-service sends "Payment successful" email
+11. booking-service auto-confirms (payment_success consumer); notification-service sends "Payment successful" email
         ↓
-12. Guest calls POST /api/bookings/{id}/confirm
+12. Booking status → CONFIRMED (or guest may POST /api/bookings/{id}/confirm if event was missed)
         ↓
-13. Booking status → CONFIRMED
+13. Redis lock released
         ↓
-14. Redis lock released
+14. booking_confirmed event → Kafka
         ↓
-15. booking_confirmed event → Kafka
+15. availability-service blocks the dates
         ↓
-16. availability-service blocks the dates
-        ↓
-17. notification-service sends "Booking confirmed" to guest + host
+16. notification-service sends "Booking confirmed" to guest + host
 ```
 
 ### Cancellation Flow

@@ -8,3 +8,4 @@
 | [004](004-booking-overlap.md) | Overlap constraint, locks, server-side price |
 | [005](005-transactional-outbox.md) | Transactional outbox and idempotent consumers |
 | [006](006-search-in-postgres.md) | Postgres FTS; no Elasticsearch |
+| [007](007-checkout-saga.md) | Payment success → booking confirmation |

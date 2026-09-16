@@ -11,8 +11,8 @@ We land **one phase per commit** on `main` so each step stays reviewable.
 | **2** | Merge 9 → 6 services | Done |
 | **3** | Booking & payment correctness | Done |
 | **4** | Outbox & Kafka | Done |
-| **5** | Postgres search (no ES) | **Done (this step)** |
-| 6 | Saga / checkout | Pending |
+| **5** | Postgres search (no ES) | Done |
+| **6** | Saga / checkout | **Done (this step)** |
 | 7–9 | Observability, RBAC, tests & CI | Pending |
 
 See [adr/](adr/) for decisions per phase.
