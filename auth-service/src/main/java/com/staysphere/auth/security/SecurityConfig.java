@@ -1,5 +1,7 @@
 package com.staysphere.auth.security;
 
+import com.staysphere.common.security.JwtAuthFilter;
+import com.staysphere.auth.security.DenylistJwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final DenylistJwtAuthFilter denylistJwtAuthFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -29,6 +32,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(denylistJwtAuthFilter,
+                        UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter,
                         UsernamePasswordAuthenticationFilter.class)
                 .build();

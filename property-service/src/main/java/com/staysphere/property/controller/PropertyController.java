@@ -7,6 +7,7 @@ import com.staysphere.property.dto.PropertyResponse;
 import com.staysphere.property.service.PropertyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,7 @@ public class PropertyController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('HOST')")
     public ResponseEntity<ApiResponse<PropertyResponse>> createProperty(
             @RequestBody PropertyRequest request) {
         return ResponseEntity.ok(
@@ -70,32 +72,21 @@ public class PropertyController {
                                 city, guests, minPrice, maxPrice)));
     }
 
-    @GetMapping("/search/es")
-    public ResponseEntity<ApiResponse<List<PropertyResponse>>> searchWithEs(
+    @GetMapping("/search/advanced")
+    public ResponseEntity<ApiResponse<List<PropertyResponse>>> searchAdvanced(
             @RequestParam(required = false) String query,
             @RequestParam(required = false) String city,
             @RequestParam(required = false) Integer guests,
             @RequestParam(required = false) BigDecimal minPrice,
-            @RequestParam(required = false) BigDecimal maxPrice,
-            @RequestParam(required = false) Double lat,
-            @RequestParam(required = false) Double lon,
-            @RequestParam(required = false) String radius) {
+            @RequestParam(required = false) BigDecimal maxPrice) {
         return ResponseEntity.ok(
-                ApiResponse.success("Elasticsearch results fetched successfully",
-                        propertyService.searchWithElasticsearch(
-                                query, city, guests,
-                                minPrice, maxPrice,
-                                lat, lon, radius)));
-    }
-
-    @PostMapping("/admin/reindex")
-    public ResponseEntity<ApiResponse<String>> reindexAll() {
-        propertyService.reindexAllProperties();
-        return ResponseEntity.ok(
-                ApiResponse.success("All properties reindexed successfully"));
+                ApiResponse.success("Search results fetched successfully",
+                        propertyService.searchWithPostgres(
+                                query, city, guests, minPrice, maxPrice)));
     }
 
     @PostMapping("/{id}/images")
+    @PreAuthorize("hasRole('HOST')")
     public ResponseEntity<ApiResponse<ImageUploadResponse>> uploadImages(
             @PathVariable String id,
             @RequestParam("files") List<MultipartFile> files) {

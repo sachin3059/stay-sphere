@@ -8,8 +8,12 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    table: flyway_booking_history
   data:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:localhost}
@@ -19,11 +23,31 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: booking-payment-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
 server:
   port: ${SERVER_PORT:8083}
 jwt:
-  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+  secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}
+staysphere:
+  property-service-url: ${PROPERTY_SERVICE_URL:http://localhost:8082}
 booking:
-  lock:
-    ttl-minutes: 10
+  pending-ttl-minutes: 30
+  expiry-check-ms: 300000
+outbox:
+  poll-interval-ms: 2000
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true

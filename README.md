@@ -1,6 +1,10 @@
 # StaySphere — Distributed Booking Platform
 
-> A production-grade, microservices-based Airbnb-like platform built with Java 21 and Spring Boot, implementing concurrency-safe booking, event-driven architecture, dynamic pricing, and a smart waitlist system.
+> A microservices-based Airbnb-like platform (Java 21, Spring Boot 3) with Postgres-backed search, transactional outbox + Kafka, Redis locks, and 6 deployable services (+ gateway).
+
+**Services:** auth, property (listings + pricing + availability), booking (reservations + waitlist), payment, notification, api-gateway.
+
+**Docs:** [docs/IMPROVEMENT_PLAN.md](docs/IMPROVEMENT_PLAN.md) · [docs/DEMO.md](docs/DEMO.md) · [docs/adr/](docs/adr/)
 
 ---
 

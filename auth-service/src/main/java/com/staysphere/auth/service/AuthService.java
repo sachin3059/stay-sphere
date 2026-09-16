@@ -6,7 +6,7 @@ import com.staysphere.auth.dto.RegisterRequest;
 import com.staysphere.auth.entity.RefreshToken;
 import com.staysphere.auth.entity.User;
 import com.staysphere.auth.repository.UserRepository;
-import com.staysphere.auth.security.JwtUtil;
+import com.staysphere.common.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,19 +26,36 @@ public class AuthService {
     private static final long ACCESS_TOKEN_EXPIRY = 900000;
     private static final long REFRESH_TOKEN_EXPIRY = 604800000;
 
+    /**
+     * Public registration always creates GUEST accounts.
+     * HOST and ADMIN roles require a separate admin-provisioned flow.
+     */
+    private User.Role resolveRegistrationRole(String requestedRole) {
+        if (requestedRole == null || requestedRole.isBlank()) {
+            return User.Role.GUEST;
+        }
+        String normalized = requestedRole.trim().toUpperCase();
+        if (normalized.equals("GUEST")) {
+            return User.Role.GUEST;
+        }
+        throw new IllegalArgumentException(
+                "Invalid role for registration. New users are registered as GUEST.");
+    }
+
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
         }
 
+        User.Role role = resolveRegistrationRole(request.getRole());
+
         User user = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(
                         request.getPassword()))
                 .fullName(request.getFullName())
-                .role(User.Role.valueOf(
-                        request.getRole().toUpperCase()))
+                .role(role)
                 .build();
 
         User saved = userRepository.save(user);

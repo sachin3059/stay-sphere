@@ -54,6 +54,10 @@ public class Booking {
 
     private LocalDateTime confirmedAt;
     private LocalDateTime cancelledAt;
+    private LocalDateTime pendingExpiresAt;
+
+    private String propertyLockKey;
+    private String propertyLockToken;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

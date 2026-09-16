@@ -1,0 +1,1 @@
+-- Baseline; local profile may use ddl-auto update until domain migrations land.

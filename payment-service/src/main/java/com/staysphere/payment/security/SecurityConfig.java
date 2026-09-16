@@ -1,5 +1,6 @@
 package com.staysphere.payment.security;
 
+import com.staysphere.common.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,7 +28,6 @@ public class SecurityConfig {
                         s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/payments/health").permitAll()
-                        .requestMatchers("/api/payments/booking/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter,

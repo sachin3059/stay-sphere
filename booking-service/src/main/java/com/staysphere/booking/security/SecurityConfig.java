@@ -1,5 +1,6 @@
 package com.staysphere.booking.security;
 
+import com.staysphere.common.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,7 +28,8 @@ public class SecurityConfig {
                         s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/bookings/health").permitAll()
-                        .requestMatchers("/api/bookings/property/**").permitAll()
+                        .requestMatchers("/api/waitlist/health").permitAll()
+                        .requestMatchers("/api/waitlist/property/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter,

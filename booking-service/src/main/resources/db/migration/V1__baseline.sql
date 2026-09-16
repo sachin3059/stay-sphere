@@ -1,0 +1,1 @@
+-- Baseline marker for booking-service Flyway history.

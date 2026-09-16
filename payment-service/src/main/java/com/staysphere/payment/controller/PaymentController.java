@@ -23,11 +23,12 @@ public class PaymentController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<PaymentResponse>> processPayment(
+            @RequestHeader("Authorization") String authorization,
             @RequestBody PaymentRequest request) {
         return ResponseEntity.ok(
                 ApiResponse.success("Payment processed successfully",
                         paymentService.processPayment(
-                                request, getCurrentUserId())));
+                                request, getCurrentUserId(), authorization)));
     }
 
     @PostMapping("/{id}/refund")

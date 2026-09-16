@@ -1,6 +1,8 @@
 package com.staysphere.booking.exception;
 
-public class BookingException extends RuntimeException {
+import com.staysphere.common.exception.ConflictException;
+
+public class BookingException extends ConflictException {
 
     public BookingException(String message) {
         super(message);

@@ -63,24 +63,6 @@ services:
       timeout: 10s
       retries: 5
 
-  elasticsearch:
-    image: elasticsearch:8.13.0
-    container_name: staysphere-elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
-      - "xpack.ml.enabled=false"
-    ports:
-      - "9200:9200"
-    volumes:
-      - elastic_data:/usr/share/elasticsearch/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_health || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-
   auth-service:
     build:
       context: ./auth-service
@@ -93,10 +75,15 @@ services:
       - SPRING_DATASOURCE_USERNAME=staysphere
       - SPRING_DATASOURCE_PASSWORD=staysphere123
       - SERVER_PORT=8081
-      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_PROFILES_ACTIVE=local
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
       - JWT_EXPIRATION=86400000
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
 
@@ -111,11 +98,19 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/staysphere
       - SPRING_DATASOURCE_USERNAME=staysphere
       - SPRING_DATASOURCE_PASSWORD=staysphere123
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SERVER_PORT=8082
-      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      - SPRING_PROFILES_ACTIVE=local
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
       - JWT_EXPIRATION=86400000
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     restart: unless-stopped
 
@@ -134,7 +129,8 @@ services:
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SERVER_PORT=8083
-      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      - SPRING_PROFILES_ACTIVE=local
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
       - JWT_EXPIRATION=86400000
     depends_on:
       postgres:
@@ -158,55 +154,11 @@ services:
       - SPRING_DATASOURCE_PASSWORD=staysphere123
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SERVER_PORT=8084
-      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      - SPRING_PROFILES_ACTIVE=local
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
       - JWT_EXPIRATION=86400000
     depends_on:
       postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    restart: unless-stopped
-
-  pricing-service:
-    build:
-      context: ./pricing-service
-      dockerfile: Dockerfile
-    container_name: staysphere-pricing
-    ports:
-      - "8085:8085"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/staysphere
-      - SPRING_DATASOURCE_USERNAME=staysphere
-      - SPRING_DATASOURCE_PASSWORD=staysphere123
-      - SERVER_PORT=8085
-      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-      - JWT_EXPIRATION=86400000
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-
-  waitlist-service:
-    build:
-      context: ./waitlist-service
-      dockerfile: Dockerfile
-    container_name: staysphere-waitlist
-    ports:
-      - "8086:8086"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/staysphere
-      - SPRING_DATASOURCE_USERNAME=staysphere
-      - SPRING_DATASOURCE_PASSWORD=staysphere123
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_DATA_REDIS_PORT=6379
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - SERVER_PORT=8086
-      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-      - JWT_EXPIRATION=86400000
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       kafka:
         condition: service_healthy
@@ -228,36 +180,11 @@ services:
       - SENDGRID_FROM_EMAIL=sachinkum22223@gmail.com
       - SENDGRID_FROM_NAME=StaySphere
       - SERVER_PORT=8087
-      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      - SPRING_PROFILES_ACTIVE=local
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
       - JWT_EXPIRATION=86400000
     depends_on:
       postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    restart: unless-stopped
-
-  availability-service:
-    build:
-      context: ./availability-service
-      dockerfile: Dockerfile
-    container_name: staysphere-availability
-    ports:
-      - "8088:8088"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/staysphere
-      - SPRING_DATASOURCE_USERNAME=staysphere
-      - SPRING_DATASOURCE_PASSWORD=staysphere123
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_DATA_REDIS_PORT=6379
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - SERVER_PORT=8088
-      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-      - JWT_EXPIRATION=86400000
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       kafka:
         condition: service_healthy
@@ -272,19 +199,16 @@ services:
       - "8080:8080"
     environment:
       - SERVER_PORT=8080
-      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      - SPRING_PROFILES_ACTIVE=local
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
     depends_on:
       - auth-service
       - property-service
       - booking-service
       - payment-service
-      - pricing-service
-      - waitlist-service
       - notification-service
-      - availability-service
     restart: unless-stopped
 
 volumes:
   postgres_data:
   redis_data:
-  elastic_data:
