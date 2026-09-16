@@ -26,3 +26,5 @@ jwt:
   expiration: ${JWT_EXPIRATION:86400000}
 staysphere:
   booking-service-url: ${BOOKING_SERVICE_URL:http://localhost:8083}
+outbox:
+  poll-interval-ms: 2000

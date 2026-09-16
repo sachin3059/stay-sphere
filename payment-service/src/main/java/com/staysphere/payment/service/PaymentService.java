@@ -10,11 +10,9 @@ import com.staysphere.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -23,7 +21,7 @@ import java.util.UUID;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final PaymentEventPublisher paymentEventPublisher;
     private final BookingPaymentClient bookingPaymentClient;
 
     @Transactional
@@ -83,18 +81,7 @@ public class PaymentService {
                     .toString().substring(0, 8).toUpperCase());
             saved.setProcessedAt(LocalDateTime.now());
             paymentRepository.save(saved);
-
-            kafkaTemplate.send("payment-events",
-                    saved.getId(),
-                    Map.of(
-                            "event", "payment_success",
-                            "paymentId", saved.getId(),
-                            "bookingId", saved.getBookingId(),
-                            "guestId", saved.getGuestId(),
-                            "hostId", saved.getHostId(),
-                            "amount", saved.getAmount().toString(),
-                            "transactionId", saved.getTransactionId()
-                    ));
+            paymentEventPublisher.publishSuccess(saved);
 
             log.info("Payment success: {}", saved.getId());
         } else {
@@ -102,15 +89,7 @@ public class PaymentService {
             saved.setFailureReason("Payment gateway declined");
             saved.setProcessedAt(LocalDateTime.now());
             paymentRepository.save(saved);
-
-            kafkaTemplate.send("payment-events",
-                    saved.getId(),
-                    Map.of(
-                            "event", "payment_failed",
-                            "paymentId", saved.getId(),
-                            "bookingId", saved.getBookingId(),
-                            "guestId", saved.getGuestId()
-                    ));
+            paymentEventPublisher.publishFailed(saved);
 
             log.info("Payment failed: {}", saved.getId());
         }
@@ -131,16 +110,7 @@ public class PaymentService {
         payment.setStatus(Payment.PaymentStatus.REFUNDED);
         payment.setProcessedAt(LocalDateTime.now());
         Payment saved = paymentRepository.save(payment);
-
-        kafkaTemplate.send("payment-events",
-                saved.getId(),
-                Map.of(
-                        "event", "payment_refunded",
-                        "paymentId", saved.getId(),
-                        "bookingId", saved.getBookingId(),
-                        "guestId", saved.getGuestId(),
-                        "amount", saved.getAmount().toString()
-                ));
+        paymentEventPublisher.publishRefunded(saved);
 
         log.info("Payment refunded: {}", saved.getId());
         return mapToResponse(saved);

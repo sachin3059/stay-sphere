@@ -13,10 +13,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EntityScan(basePackages = {
         "com.staysphere.booking.entity",
+        "com.staysphere.booking.outbox",
         "com.staysphere.waitlist.entity"
 })
 @EnableJpaRepositories(basePackages = {
         "com.staysphere.booking.repository",
+        "com.staysphere.booking.outbox",
         "com.staysphere.waitlist.repository"
 })
 @ComponentScan(basePackages = {

@@ -40,6 +40,8 @@ staysphere:
 booking:
   pending-ttl-minutes: 30
   expiry-check-ms: 300000
+outbox:
+  poll-interval-ms: 2000
 waitlist:
   slot:
     ttl-minutes: 30

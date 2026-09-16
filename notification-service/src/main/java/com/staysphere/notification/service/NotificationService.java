@@ -2,7 +2,9 @@ package com.staysphere.notification.service;
 
 import com.staysphere.notification.dto.NotificationResponse;
 import com.staysphere.notification.entity.Notification;
+import com.staysphere.notification.entity.ProcessedEvent;
 import com.staysphere.notification.repository.NotificationRepository;
+import com.staysphere.notification.repository.ProcessedEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -20,12 +22,16 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final EmailService emailService;
+    private final ProcessedEventRepository processedEventRepository;
 
     // Consume booking events
     @KafkaListener(topics = "booking-events",
             groupId = "notification-group")
     @Transactional
     public void onBookingEvent(Map<String, Object> event) {
+        if (!markProcessed(event)) {
+            return;
+        }
         String eventType = (String) event.get("event");
         log.info("Received booking event: {}", eventType);
 
@@ -41,6 +47,9 @@ public class NotificationService {
             groupId = "notification-group")
     @Transactional
     public void onPaymentEvent(Map<String, Object> event) {
+        if (!markProcessed(event)) {
+            return;
+        }
         String eventType = (String) event.get("event");
         log.info("Received payment event: {}", eventType);
 
@@ -56,6 +65,9 @@ public class NotificationService {
             groupId = "notification-group")
     @Transactional
     public void onWaitlistEvent(Map<String, Object> event) {
+        if (!markProcessed(event)) {
+            return;
+        }
         String eventType = (String) event.get("event");
         log.info("Received waitlist event: {}", eventType);
 
@@ -242,6 +254,20 @@ public class NotificationService {
         return notificationRepository.findByReferenceId(referenceId)
                 .stream().map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    private boolean markProcessed(Map<String, Object> event) {
+        String eventId = event.get("eventId") != null
+                ? event.get("eventId").toString()
+                : String.valueOf(event.get("event")) + ":"
+                + String.valueOf(event.get("bookingId")) + ":"
+                + String.valueOf(event.get("paymentId")) + ":"
+                + String.valueOf(event.get("waitlistId"));
+        if (processedEventRepository.existsById(eventId)) {
+            return false;
+        }
+        processedEventRepository.save(new ProcessedEvent(eventId));
+        return true;
     }
 
     private NotificationResponse mapToResponse(Notification n) {

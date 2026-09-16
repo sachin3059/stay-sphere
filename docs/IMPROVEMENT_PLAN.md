@@ -9,8 +9,8 @@ We land **one phase per commit** on `main` so each step stays reviewable.
 | **0** | Security & hygiene | Done |
 | **1** | Shared foundations (exceptions, validation, JWT in `common`, Flyway) | Done |
 | **2** | Merge 9 → 6 services | Done |
-| **3** | Booking & payment correctness | **Done (this step)** |
-| 4 | Outbox & Kafka | Pending |
+| **3** | Booking & payment correctness | Done |
+| **4** | Outbox & Kafka | **Done (this step)** |
 | 5 | Postgres search (no ES) | Pending |
 | 6 | Saga / checkout | Pending |
 | 7–9 | Observability, RBAC, tests & CI | Pending |

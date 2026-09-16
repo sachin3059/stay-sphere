@@ -8,7 +8,6 @@ import com.staysphere.waitlist.repository.WaitlistRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +23,7 @@ import java.util.stream.Collectors;
 public class WaitlistService {
 
     private final WaitlistRepository waitlistRepository;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final WaitlistEventPublisher waitlistEventPublisher;
     private static final int SLOT_TTL_MINUTES = 30;
 
     @Transactional
@@ -100,17 +99,15 @@ public class WaitlistService {
                             LocalDateTime.now().plusMinutes(SLOT_TTL_MINUTES));
                     waitlistRepository.save(entry);
 
-                    kafkaTemplate.send("waitlist-events",
-                            entry.getId(),
-                            Map.of(
-                                    "event", "slot_offered",
-                                    "waitlistId", entry.getId(),
-                                    "guestId", entry.getGuestId(),
-                                    "propertyId", entry.getPropertyId(),
-                                    "checkIn", entry.getCheckIn().toString(),
-                                    "checkOut", entry.getCheckOut().toString(),
-                                    "expiresAt", entry.getSlotExpiresAt().toString()
-                            ));
+                    waitlistEventPublisher.publishSlotOffered(entry.getId(), Map.of(
+                            "event", "slot_offered",
+                            "waitlistId", entry.getId(),
+                            "guestId", entry.getGuestId(),
+                            "propertyId", entry.getPropertyId(),
+                            "checkIn", entry.getCheckIn().toString(),
+                            "checkOut", entry.getCheckOut().toString(),
+                            "expiresAt", entry.getSlotExpiresAt().toString()
+                    ));
 
                     log.info("Slot offered to guest {} — expires at {}",
                             entry.getGuestId(), entry.getSlotExpiresAt());
