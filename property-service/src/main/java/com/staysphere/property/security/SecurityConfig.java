@@ -32,6 +32,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/properties/{id}").permitAll()
                         .requestMatchers("GET", "/api/properties").permitAll()
                         .requestMatchers("/api/properties/search/es").permitAll()
+                        .requestMatchers("/api/pricing/health").permitAll()
+                        .requestMatchers("/api/pricing/calculate").permitAll()
+                        .requestMatchers("/api/pricing/rules/**").permitAll()
+                        .requestMatchers("/api/availability/health").permitAll()
+                        .requestMatchers("/api/availability/*/ranges").permitAll()
+                        .requestMatchers("/api/availability/*/check").permitAll()
+                        .requestMatchers("/api/availability/*/blocked").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter,

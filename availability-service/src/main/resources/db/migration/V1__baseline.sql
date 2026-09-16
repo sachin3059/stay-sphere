@@ -1,1 +1,0 @@
--- Schema managed by JPA on local profile; Flyway tracks revision per service.

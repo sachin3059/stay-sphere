@@ -30,7 +30,6 @@ public class WaitlistService {
     @Transactional
     public WaitlistResponse joinWaitlist(WaitlistRequest request,
                                          String guestId) {
-        // Prevent duplicate entries
         boolean alreadyWaiting = waitlistRepository
                 .existsActiveEntry(
                         request.getPropertyId(), guestId,
@@ -65,7 +64,6 @@ public class WaitlistService {
         return mapToResponse(saved);
     }
 
-    // Triggered when booking_cancelled Kafka event arrives
     @KafkaListener(topics = "booking-events",
             groupId = "waitlist-group")
     @Transactional
@@ -102,7 +100,6 @@ public class WaitlistService {
                             LocalDateTime.now().plusMinutes(SLOT_TTL_MINUTES));
                     waitlistRepository.save(entry);
 
-                    // Publish event so notification service alerts the guest
                     kafkaTemplate.send("waitlist-events",
                             entry.getId(),
                             Map.of(
@@ -120,8 +117,6 @@ public class WaitlistService {
                 });
     }
 
-    // Runs every 5 minutes — expire stale OFFERED entries
-    // and offer slot to the next person in queue
     @Scheduled(fixedRate = 300000)
     @Transactional
     public void expireStaleOffers() {
@@ -135,7 +130,6 @@ public class WaitlistService {
             log.info("Waitlist slot expired for guest {} on property {}",
                     entry.getGuestId(), entry.getPropertyId());
 
-            // Offer to next person in queue
             offerSlotToNext(entry.getPropertyId(),
                     entry.getCheckIn(), entry.getCheckOut());
         }

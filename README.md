@@ -93,13 +93,10 @@ StaySphere is a distributed property booking platform built to demonstrate real-
 |---|---|---|
 | api-gateway | 8080 | JWT validation, routing, rate limiting |
 | auth-service | 8081 | Registration, login, JWT + refresh tokens |
-| property-service | 8082 | Listings, search, image upload |
-| booking-service | 8083 | Booking lifecycle, Redis locking |
+| property-service | 8082 | Listings, search, images, **availability**, **pricing** (`/api/availability`, `/api/pricing`) |
+| booking-service | 8083 | Bookings, Redis locking, **waitlist** (`/api/waitlist`) |
 | payment-service | 8084 | Idempotent payment processing |
-| pricing-service | 8085 | Dynamic pricing engine |
-| waitlist-service | 8086 | Priority queue, slot auto-promotion |
 | notification-service | 8087 | Email via SendGrid, Kafka consumers |
-| availability-service | 8088 | Interval merge, blocked dates |
 
 ---
 

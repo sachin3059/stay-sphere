@@ -4,3 +4,4 @@
 |-----|--------|
 | [001](001-secrets-and-profiles.md) | Secrets and Spring profiles |
 | [002](002-shared-foundations.md) | Shared `common` module, Flyway baseline |
+| [003](003-service-boundaries.md) | Merge to six deployable services |

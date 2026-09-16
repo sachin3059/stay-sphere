@@ -21,11 +21,11 @@ spring:
           predicates:
             - Path=/api/payments/**
         - id: pricing-service
-          uri: http://pricing-service:8085
+          uri: http://property-service:8082
           predicates:
             - Path=/api/pricing/**
         - id: waitlist-service
-          uri: http://waitlist-service:8086
+          uri: http://booking-service:8083
           predicates:
             - Path=/api/waitlist/**
         - id: notification-service
@@ -33,7 +33,7 @@ spring:
           predicates:
             - Path=/api/notifications/**
         - id: availability-service
-          uri: http://availability-service:8088
+          uri: http://property-service:8082
           predicates:
             - Path=/api/availability/**
 server:
