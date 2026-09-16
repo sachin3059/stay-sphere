@@ -39,3 +39,10 @@ subprojects {
         useJUnitPlatform()
     }
 }
+
+configure(subprojects.findAll { it.name != 'common' && it.name != 'api-gateway' }) {
+    dependencies {
+        implementation 'org.flywaydb:flyway-core'
+        implementation 'org.flywaydb:flyway-database-postgresql'
+    }
+}

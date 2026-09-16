@@ -6,8 +6,8 @@ We land **one phase per commit** on `main` so each step stays reviewable.
 
 | Phase | Focus | Status |
 |-------|--------|--------|
-| **0** | Security & hygiene | **Done (this step)** |
-| 1 | Shared foundations (exceptions, validation, JWT in `common`, Flyway) | Pending |
+| **0** | Security & hygiene | Done |
+| **1** | Shared foundations (exceptions, validation, JWT in `common`, Flyway) | **Done (this step)** |
 | 2 | Merge 9 → 6 services | Pending |
 | 3 | Booking & payment correctness | Pending |
 | 4 | Outbox & Kafka | Pending |

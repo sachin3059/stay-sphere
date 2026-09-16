@@ -6,7 +6,9 @@ import com.staysphere.auth.dto.RegisterRequest;
 import com.staysphere.auth.entity.RefreshToken;
 import com.staysphere.auth.entity.User;
 import com.staysphere.auth.repository.UserRepository;
-import com.staysphere.auth.security.JwtUtil;
+import com.staysphere.common.exception.BadRequestException;
+import com.staysphere.common.exception.ConflictException;
+import com.staysphere.common.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,7 +47,7 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered");
+            throw new ConflictException("Email already registered");
         }
 
         User.Role role = resolveRegistrationRole(request.getRole());
@@ -81,11 +83,11 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                        new BadRequestException("Invalid credentials"));
 
         if (!passwordEncoder.matches(request.getPassword(),
                 user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new BadRequestException("Invalid credentials");
         }
 
         String accessToken = jwtUtil.generateToken(
@@ -112,7 +114,7 @@ public class AuthService {
 
         User user = userRepository.findByEmail(token.getEmail())
                 .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                        new BadRequestException("User not found"));
 
         // Generate new access token
         String newAccessToken = jwtUtil.generateToken(

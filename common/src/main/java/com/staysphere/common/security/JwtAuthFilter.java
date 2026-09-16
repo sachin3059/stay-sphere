@@ -1,4 +1,4 @@
-package com.staysphere.availability.security;
+package com.staysphere.common.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

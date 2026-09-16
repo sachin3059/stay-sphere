@@ -1,6 +1,7 @@
 package com.staysphere.booking.controller;
 
 import com.staysphere.booking.dto.BookingRequest;
+import jakarta.validation.Valid;
 import com.staysphere.booking.dto.BookingResponse;
 import com.staysphere.booking.service.BookingService;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<BookingResponse> createBooking(
-            @RequestBody BookingRequest request) {
+            @Valid @RequestBody BookingRequest request) {
         return ResponseEntity.ok(
                 bookingService.createBooking(request, getCurrentUserId()));
     }

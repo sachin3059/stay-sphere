@@ -2,6 +2,7 @@ package com.staysphere.auth.service;
 
 import com.staysphere.auth.entity.RefreshToken;
 import com.staysphere.auth.repository.RefreshTokenRepository;
+import com.staysphere.common.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -41,11 +42,11 @@ public class RefreshTokenService {
     public RefreshToken validateRefreshToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository
                 .findByToken(token)
-                .orElseThrow(() -> new RuntimeException(
+                .orElseThrow(() -> new BadRequestException(
                         "Refresh token not found"));
 
         if (!refreshToken.isValid()) {
-            throw new RuntimeException(
+            throw new BadRequestException(
                     refreshToken.isRevoked() ?
                             "Refresh token has been revoked" :
                             "Refresh token has expired");
