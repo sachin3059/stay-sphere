@@ -9,3 +9,6 @@
 | [005](005-transactional-outbox.md) | Transactional outbox and idempotent consumers |
 | [006](006-search-in-postgres.md) | Postgres FTS; no Elasticsearch |
 | [007](007-checkout-saga.md) | Payment success → booking confirmation |
+| [008](008-observability.md) | Correlation id and Actuator health |
+| [009](009-rbac-and-denylist.md) | HOST RBAC and Redis token denylist |
+| [010](010-tests-and-ci.md) | GitHub Actions and unit tests |

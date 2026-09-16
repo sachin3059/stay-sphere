@@ -19,6 +19,7 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final TokenDenylistService tokenDenylistService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -34,6 +35,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(7);
+
+        if (tokenDenylistService.isDenied(token)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
 
         if (jwtUtil.isTokenValid(token)) {
             String email = jwtUtil.extractEmail(token);

@@ -14,6 +14,10 @@ spring:
     enabled: true
     baseline-on-migrate: true
     table: flyway_auth_history
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
 server:
   port: ${SERVER_PORT:8081}
 jwt:

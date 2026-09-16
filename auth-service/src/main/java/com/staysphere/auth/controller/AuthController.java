@@ -6,7 +6,9 @@ import com.staysphere.auth.dto.RefreshTokenRequest;
 import com.staysphere.auth.dto.RegisterRequest;
 import com.staysphere.auth.service.AuthService;
 import com.staysphere.common.ApiResponse;
+import com.staysphere.common.security.TokenDenylistService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +18,10 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final TokenDenylistService tokenDenylistService;
+
+    @Value("${jwt.expiration:900000}")
+    private long accessTokenExpirationMs;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(
@@ -44,8 +50,13 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<String>> logout(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestBody RefreshTokenRequest request) {
         authService.logout(request.getRefreshToken());
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            tokenDenylistService.deny(
+                    authorization.substring(7), accessTokenExpirationMs);
+        }
         return ResponseEntity.ok(
                 ApiResponse.success("Logged out successfully"));
     }

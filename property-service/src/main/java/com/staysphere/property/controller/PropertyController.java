@@ -7,6 +7,7 @@ import com.staysphere.property.dto.PropertyResponse;
 import com.staysphere.property.service.PropertyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,6 +29,7 @@ public class PropertyController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('HOST')")
     public ResponseEntity<ApiResponse<PropertyResponse>> createProperty(
             @RequestBody PropertyRequest request) {
         return ResponseEntity.ok(
@@ -85,6 +87,7 @@ public class PropertyController {
     }
 
     @PostMapping("/{id}/images")
+    @PreAuthorize("hasRole('HOST')")
     public ResponseEntity<ApiResponse<ImageUploadResponse>> uploadImages(
             @PathVariable String id,
             @RequestParam("files") List<MultipartFile> files) {
