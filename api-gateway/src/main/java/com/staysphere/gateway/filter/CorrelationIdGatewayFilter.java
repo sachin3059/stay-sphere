@@ -21,11 +21,16 @@ public class CorrelationIdGatewayFilter implements GlobalFilter, Ordered {
         if (correlationId == null || correlationId.isBlank()) {
             correlationId = UUID.randomUUID().toString();
         }
+        final String id = correlationId;
         ServerHttpRequest request = exchange.getRequest().mutate()
-                .header(HEADER, correlationId)
+                .header(HEADER, id)
                 .build();
-        exchange.getResponse().getHeaders().set(HEADER, correlationId);
-        return chain.filter(exchange.mutate().request(request).build());
+        ServerWebExchange mutated = exchange.mutate().request(request).build();
+        mutated.getResponse().beforeCommit(() -> {
+            mutated.getResponse().getHeaders().set(HEADER, id);
+            return Mono.empty();
+        });
+        return chain.filter(mutated);
     }
 
     @Override

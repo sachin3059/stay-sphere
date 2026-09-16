@@ -3,8 +3,8 @@
 ## Decision
 
 - Non-local runs require `JWT_SECRET` and third-party API keys via environment variables.
-- `application-local.yml` may supply dev-only placeholders when `spring.profiles.active=local`.
-- `.env` is gitignored; `.env.example` documents required variables.
+- One repo-root **`.env`** feeds every service (Docker Compose `env_file` and `application-local.yml` import).
+- No per-service `.env` files or separate template files.
 
 ## Alternatives considered
 

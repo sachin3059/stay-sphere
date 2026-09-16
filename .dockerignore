@@ -1,0 +1,11 @@
+.git
+.github
+.idea
+.vscode
+.env
+.env.*
+**/.gradle
+**/build
+*.md
+docs
+agent-transcripts

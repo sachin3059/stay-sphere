@@ -379,25 +379,12 @@ staysphere-kafka           Running
 
 ### Step 3 — Configure environment variables
 
-Each service reads from its own `application.yml`. The default values work out of the box for local development.
+All secrets and integration keys live in **one file** at the repo root: **`.env`** (copy from `env.template`). Do not commit `.env`.
 
-For SendGrid and Cloudinary, update these files:
+- **Docker Compose** loads `.env` for every service (`env_file: .env`).
+- **Local IDE runs** (`SPRING_PROFILES_ACTIVE=local`) import the same `.env` via `application-local.yml`.
 
-**notification-service/src/main/resources/application.yml**
-```yaml
-sendgrid:
-  api-key: YOUR_SENDGRID_API_KEY
-  from-email: your-verified-email@example.com
-  from-name: StaySphere
-```
-
-**property-service/src/main/resources/application.yml**
-```yaml
-cloudinary:
-  cloud-name: YOUR_CLOUD_NAME
-  api-key: YOUR_API_KEY
-  api-secret: YOUR_API_SECRET
-```
+Do not put real credentials in `application.yml` or `docker-compose.yml`.
 
 ---
 

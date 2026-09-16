@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StaySphere — Stripe test checkout</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 480px; margin: 2rem auto; padding: 0 1rem; }
+    label { display: block; margin-top: 1rem; font-weight: 600; }
+    input, button { width: 100%; padding: 0.5rem; margin-top: 0.25rem; box-sizing: border-box; }
+    button { margin-top: 1.5rem; background: #635bff; color: #fff; border: none; cursor: pointer; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #payment-element { margin-top: 1rem; }
+    .msg { margin-top: 1rem; white-space: pre-wrap; }
+    .err { color: #b00020; }
+    .ok { color: #0d652d; }
+  </style>
+</head>
+<body>
+  <h1>StaySphere test payment</h1>
+  <p>Use Stripe <strong>test</strong> keys. Card: <code>4242 4242 4242 4242</code>, any future expiry, any CVC.</p>
+
+  <label>API base (gateway)</label>
+  <input id="apiBase" value="http://localhost:8080" />
+
+  <label>Bearer token (from login)</label>
+  <input id="token" placeholder="eyJ..." />
+
+  <label>Booking ID</label>
+  <input id="bookingId" />
+
+  <label>Host ID</label>
+  <input id="hostId" />
+
+  <label>Idempotency key</label>
+  <input id="idempotencyKey" />
+
+  <button type="button" id="startBtn">1. Create PaymentIntent</button>
+  <div id="payment-element"></div>
+  <button type="button" id="payBtn" disabled>2. Pay</button>
+  <div id="message" class="msg"></div>
+
+  <script>
+    let stripe, elements, clientSecret, paymentId;
+
+    const msg = (text, ok) => {
+      const el = document.getElementById('message');
+      el.textContent = text;
+      el.className = 'msg ' + (ok ? 'ok' : 'err');
+    };
+
+    document.getElementById('startBtn').onclick = async () => {
+      const apiBase = document.getElementById('apiBase').value.replace(/\/$/, '');
+      const token = document.getElementById('token').value.trim();
+      if (!token) { msg('Paste a JWT from /api/auth/login', false); return; }
+
+      const body = {
+        bookingId: document.getElementById('bookingId').value.trim(),
+        hostId: document.getElementById('hostId').value.trim(),
+        idempotencyKey: document.getElementById('idempotencyKey').value.trim()
+      };
+
+      try {
+        const res = await fetch(apiBase + '/api/payments/stripe/intent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token.startsWith('Bearer ') ? token : 'Bearer ' + token
+          },
+          body: JSON.stringify(body)
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || JSON.stringify(json));
+
+        const data = json.data;
+        clientSecret = data.clientSecret;
+        paymentId = data.paymentId;
+        stripe = Stripe(data.publishableKey);
+        elements = stripe.elements({ clientSecret });
+        document.getElementById('payment-element').innerHTML = '';
+        const paymentElement = elements.create('payment');
+        paymentElement.mount('#payment-element');
+        document.getElementById('payBtn').disabled = false;
+        msg('PaymentIntent ready. Complete card details and click Pay.', true);
+      } catch (e) {
+        msg(String(e.message || e), false);
+      }
+    };
+
+    document.getElementById('payBtn').onclick = async () => {
+      const apiBase = document.getElementById('apiBase').value.replace(/\/$/, '');
+      const token = document.getElementById('token').value.trim();
+      document.getElementById('payBtn').disabled = true;
+      try {
+        const { error } = await stripe.confirmPayment({
+          elements,
+          confirmParams: { return_url: window.location.href },
+          redirect: 'if_required'
+        });
+        if (error) throw new Error(error.message);
+
+        const res = await fetch(apiBase + '/api/payments/stripe/confirm/' + paymentId, {
+          method: 'POST',
+          headers: {
+            'Authorization': token.startsWith('Bearer ') ? token : 'Bearer ' + token
+          }
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || JSON.stringify(json));
+        msg('Payment ' + json.data.status + '. Booking should auto-confirm via Kafka.\n' + JSON.stringify(json.data, null, 2), true);
+      } catch (e) {
+        msg(String(e.message || e), false);
+        document.getElementById('payBtn').disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

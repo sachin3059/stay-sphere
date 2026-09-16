@@ -32,3 +32,9 @@ staysphere:
   booking-service-url: ${BOOKING_SERVICE_URL:http://localhost:8083}
 outbox:
   poll-interval-ms: 2000
+payment:
+  gateway: ${PAYMENT_GATEWAY:simulate}
+  stripe:
+    secret-key: ${STRIPE_SECRET_KEY:}
+    publishable-key: ${STRIPE_PUBLISHABLE_KEY:}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}

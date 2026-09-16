@@ -27,11 +27,19 @@ public class BookingPaymentClient {
         if (root == null) {
             throw new IllegalStateException("Booking not found for payment");
         }
+        String currency = root.hasNonNull("currency")
+                ? root.path("currency").asText()
+                : "INR";
         return new BookingSnapshot(
                 root.path("status").asText(),
                 new BigDecimal(root.path("totalPrice").asText("0")),
-                root.path("guestId").asText());
+                root.path("guestId").asText(),
+                currency);
     }
 
-    public record BookingSnapshot(String status, BigDecimal totalPrice, String guestId) {}
+    public record BookingSnapshot(
+            String status,
+            BigDecimal totalPrice,
+            String guestId,
+            String currency) {}
 }

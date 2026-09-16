@@ -29,6 +29,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/payments/health").permitAll()
+                        .requestMatchers("/api/payments/stripe/config").permitAll()
+                        .requestMatchers("/api/payments/checkout").permitAll()
+                        .requestMatchers("/api/payments/webhooks/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter,

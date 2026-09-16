@@ -6,14 +6,14 @@ import com.staysphere.payment.dto.PaymentRequest;
 import com.staysphere.payment.dto.PaymentResponse;
 import com.staysphere.payment.entity.Payment;
 import com.staysphere.payment.exception.PaymentException;
+import com.staysphere.payment.gateway.GatewayResult;
+import com.staysphere.payment.gateway.PaymentGateway;
 import com.staysphere.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -21,18 +21,24 @@ import java.util.UUID;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final PaymentEventPublisher paymentEventPublisher;
+    private final PaymentGateway paymentGateway;
     private final BookingPaymentClient bookingPaymentClient;
+    private final PaymentLifecycleService paymentLifecycleService;
 
     @Transactional
     public PaymentResponse processPayment(PaymentRequest request,
                                           String guestId,
                                           String authorizationHeader) {
-        if (paymentRepository.existsByIdempotencyKey(
-                request.getIdempotencyKey())) {
+        if (!paymentGateway.isSimulated()) {
+            throw new PaymentException(
+                    "Direct payment is disabled when payment.gateway=stripe. "
+                            + "Use POST /api/payments/stripe/intent and the checkout page.");
+        }
+
+        if (paymentRepository.existsByIdempotencyKey(request.getIdempotencyKey())) {
             log.info("Duplicate payment request for idempotency key: {}",
                     request.getIdempotencyKey());
-            return mapToResponse(
+            return paymentLifecycleService.toResponse(
                     paymentRepository.findByIdempotencyKey(
                             request.getIdempotencyKey()).orElseThrow());
         }
@@ -57,7 +63,7 @@ public class PaymentService {
                 .idempotencyKey(request.getIdempotencyKey())
                 .amount(request.getAmount())
                 .currency(request.getCurrency() != null ?
-                        request.getCurrency() : "INR")
+                        request.getCurrency() : booking.currency())
                 .paymentMethod(Payment.PaymentMethod.valueOf(
                         request.getPaymentMethod().toUpperCase()))
                 .status(Payment.PaymentStatus.PENDING)
@@ -67,34 +73,22 @@ public class PaymentService {
         try {
             saved = paymentRepository.save(payment);
         } catch (DataIntegrityViolationException ex) {
-            return mapToResponse(paymentRepository.findByIdempotencyKey(
-                    request.getIdempotencyKey()).orElseThrow());
+            return paymentLifecycleService.toResponse(
+                    paymentRepository.findByIdempotencyKey(
+                            request.getIdempotencyKey()).orElseThrow());
         }
 
-        // Simulate payment processing
-        // In production this calls Stripe/Razorpay API
-        boolean paymentSuccess = simulatePaymentGateway(saved);
-
-        if (paymentSuccess) {
-            saved.setStatus(Payment.PaymentStatus.SUCCESS);
-            saved.setTransactionId("TXN-" + UUID.randomUUID()
-                    .toString().substring(0, 8).toUpperCase());
-            saved.setProcessedAt(LocalDateTime.now());
-            paymentRepository.save(saved);
-            paymentEventPublisher.publishSuccess(saved);
-
+        GatewayResult result = paymentGateway.charge(saved);
+        if (result.isSuccess()) {
+            paymentLifecycleService.markSuccess(saved, result.getTransactionId());
             log.info("Payment success: {}", saved.getId());
         } else {
-            saved.setStatus(Payment.PaymentStatus.FAILED);
-            saved.setFailureReason("Payment gateway declined");
-            saved.setProcessedAt(LocalDateTime.now());
-            paymentRepository.save(saved);
-            paymentEventPublisher.publishFailed(saved);
-
+            paymentLifecycleService.markFailed(saved, result.getFailureReason());
             log.info("Payment failed: {}", saved.getId());
         }
 
-        return mapToResponse(saved);
+        return paymentLifecycleService.toResponse(
+                paymentRepository.findById(saved.getId()).orElseThrow());
     }
 
     @Transactional
@@ -107,49 +101,27 @@ public class PaymentService {
             throw new PaymentException("Only successful payments can be refunded");
         }
 
-        payment.setStatus(Payment.PaymentStatus.REFUNDED);
-        payment.setProcessedAt(LocalDateTime.now());
-        Payment saved = paymentRepository.save(payment);
-        paymentEventPublisher.publishRefunded(saved);
+        GatewayResult refund = paymentGateway.refund(payment);
+        if (!refund.isSuccess()) {
+            throw new PaymentException(
+                    "Refund failed: " + refund.getFailureReason());
+        }
 
-        log.info("Payment refunded: {}", saved.getId());
-        return mapToResponse(saved);
+        paymentLifecycleService.markRefunded(payment);
+        return paymentLifecycleService.toResponse(
+                paymentRepository.findById(paymentId).orElseThrow());
     }
 
     public PaymentResponse getPayment(String paymentId) {
-        return mapToResponse(paymentRepository.findById(paymentId)
+        return paymentLifecycleService.toResponse(paymentRepository.findById(paymentId)
                 .orElseThrow(() ->
                         new PaymentException("Payment not found")));
     }
 
     public PaymentResponse getPaymentByBooking(String bookingId) {
-        return mapToResponse(paymentRepository.findByBookingId(bookingId)
-                .orElseThrow(() ->
-                        new PaymentException("Payment not found for booking")));
-    }
-
-    private boolean simulatePaymentGateway(Payment payment) {
-        // Simulates 90% success rate
-        // Replace with actual Stripe/Razorpay call in production
-        return Math.random() > 0.1;
-    }
-
-    private PaymentResponse mapToResponse(Payment p) {
-        return PaymentResponse.builder()
-                .id(p.getId())
-                .bookingId(p.getBookingId())
-                .guestId(p.getGuestId())
-                .hostId(p.getHostId())
-                .idempotencyKey(p.getIdempotencyKey())
-                .amount(p.getAmount())
-                .currency(p.getCurrency())
-                .status(p.getStatus().name())
-                .paymentMethod(p.getPaymentMethod() != null ?
-                        p.getPaymentMethod().name() : null)
-                .transactionId(p.getTransactionId())
-                .failureReason(p.getFailureReason())
-                .createdAt(p.getCreatedAt())
-                .processedAt(p.getProcessedAt())
-                .build();
+        return paymentLifecycleService.toResponse(
+                paymentRepository.findByBookingId(bookingId)
+                        .orElseThrow(() ->
+                                new PaymentException("Payment not found for booking")));
     }
 }
