@@ -35,9 +35,11 @@ server:
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}
+staysphere:
+  property-service-url: ${PROPERTY_SERVICE_URL:http://localhost:8082}
 booking:
-  lock:
-    ttl-minutes: 10
+  pending-ttl-minutes: 30
+  expiry-check-ms: 300000
 waitlist:
   slot:
     ttl-minutes: 30

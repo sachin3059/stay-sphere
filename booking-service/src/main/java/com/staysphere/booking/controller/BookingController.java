@@ -1,13 +1,14 @@
 package com.staysphere.booking.controller;
 
 import com.staysphere.booking.dto.BookingRequest;
-import jakarta.validation.Valid;
 import com.staysphere.booking.dto.BookingResponse;
 import com.staysphere.booking.service.BookingService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -24,15 +25,17 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<BookingResponse> createBooking(
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @Valid @RequestBody BookingRequest request) {
         return ResponseEntity.ok(
-                bookingService.createBooking(request, getCurrentUserId()));
+                bookingService.createBooking(request, getCurrentUserId(), idempotencyKey));
     }
 
     @PostMapping("/{id}/confirm")
     public ResponseEntity<BookingResponse> confirmBooking(
             @PathVariable String id) {
-        return ResponseEntity.ok(bookingService.confirmBooking(id));
+        return ResponseEntity.ok(
+                bookingService.confirmBooking(id, getCurrentUserId()));
     }
 
     @PostMapping("/{id}/cancel")
@@ -45,7 +48,8 @@ public class BookingController {
     @GetMapping("/{id}")
     public ResponseEntity<BookingResponse> getBooking(
             @PathVariable String id) {
-        return ResponseEntity.ok(bookingService.getBooking(id));
+        return ResponseEntity.ok(
+                bookingService.getBooking(id, getCurrentUserId()));
     }
 
     @GetMapping("/my")
@@ -58,7 +62,7 @@ public class BookingController {
     public ResponseEntity<List<BookingResponse>> getPropertyBookings(
             @PathVariable String propertyId) {
         return ResponseEntity.ok(
-                bookingService.getPropertyBookings(propertyId));
+                bookingService.getPropertyBookings(propertyId, getCurrentUserId()));
     }
 
     @GetMapping("/health")

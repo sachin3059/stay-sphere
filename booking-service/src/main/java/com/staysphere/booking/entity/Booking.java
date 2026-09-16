@@ -52,6 +52,10 @@ public class Booking {
     @Column(unique = true)
     private String idempotencyKey;
 
+    private String propertyLockKey;
+    private String propertyLockToken;
+    private LocalDateTime pendingExpiresAt;
+
     private LocalDateTime confirmedAt;
     private LocalDateTime cancelledAt;
 

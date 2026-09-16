@@ -24,3 +24,5 @@ server:
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}
+staysphere:
+  booking-service-url: ${BOOKING_SERVICE_URL:http://localhost:8083}

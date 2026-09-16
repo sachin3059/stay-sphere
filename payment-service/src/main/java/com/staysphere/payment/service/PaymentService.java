@@ -1,5 +1,7 @@
 package com.staysphere.payment.service;
 
+import com.staysphere.common.exception.BadRequestException;
+import com.staysphere.payment.client.BookingPaymentClient;
 import com.staysphere.payment.dto.PaymentRequest;
 import com.staysphere.payment.dto.PaymentResponse;
 import com.staysphere.payment.entity.Payment;
@@ -7,6 +9,7 @@ import com.staysphere.payment.exception.PaymentException;
 import com.staysphere.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,18 +24,32 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final BookingPaymentClient bookingPaymentClient;
 
     @Transactional
     public PaymentResponse processPayment(PaymentRequest request,
-                                          String guestId) {
-        // Idempotency check — if same key exists return existing payment
+                                          String guestId,
+                                          String authorizationHeader) {
         if (paymentRepository.existsByIdempotencyKey(
                 request.getIdempotencyKey())) {
             log.info("Duplicate payment request for idempotency key: {}",
                     request.getIdempotencyKey());
             return mapToResponse(
                     paymentRepository.findByIdempotencyKey(
-                            request.getIdempotencyKey()).get());
+                            request.getIdempotencyKey()).orElseThrow());
+        }
+
+        BookingPaymentClient.BookingSnapshot booking =
+                bookingPaymentClient.fetchBooking(
+                        request.getBookingId(), authorizationHeader);
+        if (!"PENDING".equalsIgnoreCase(booking.status())) {
+            throw new PaymentException("Booking is not payable in current state");
+        }
+        if (!booking.guestId().equals(guestId)) {
+            throw new BadRequestException("Guest does not own this booking");
+        }
+        if (booking.totalPrice().compareTo(request.getAmount()) != 0) {
+            throw new PaymentException("Payment amount does not match booking total");
         }
 
         Payment payment = Payment.builder()
@@ -48,7 +65,13 @@ public class PaymentService {
                 .status(Payment.PaymentStatus.PENDING)
                 .build();
 
-        Payment saved = paymentRepository.save(payment);
+        Payment saved;
+        try {
+            saved = paymentRepository.save(payment);
+        } catch (DataIntegrityViolationException ex) {
+            return mapToResponse(paymentRepository.findByIdempotencyKey(
+                    request.getIdempotencyKey()).orElseThrow());
+        }
 
         // Simulate payment processing
         // In production this calls Stripe/Razorpay API

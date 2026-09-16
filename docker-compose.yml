@@ -143,6 +143,7 @@ services:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PROPERTY_SERVICE_URL=http://property-service:8082
       - SERVER_PORT=8083
       - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
       - JWT_EXPIRATION=86400000
@@ -153,6 +154,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      property-service:
+        condition: service_started
     restart: unless-stopped
 
   payment-service:
@@ -168,6 +171,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=staysphere
       - SPRING_DATASOURCE_PASSWORD=staysphere123
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - BOOKING_SERVICE_URL=http://booking-service:8083
       - SERVER_PORT=8084
       - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
       - JWT_EXPIRATION=86400000
@@ -176,6 +180,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      booking-service:
+        condition: service_started
     restart: unless-stopped
 
   notification-service:
