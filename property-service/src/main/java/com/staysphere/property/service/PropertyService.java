@@ -1,16 +1,17 @@
 package com.staysphere.property.service;
 
+import com.staysphere.common.exception.ResourceNotFoundException;
 import com.staysphere.property.dto.ImageUploadResponse;
 import com.staysphere.property.dto.PropertyRequest;
 import com.staysphere.property.dto.PropertyResponse;
 import com.staysphere.property.entity.Property;
-import com.staysphere.property.entity.PropertyDocument;
 import com.staysphere.property.repository.PropertyRepository;
+import com.staysphere.property.repository.PropertySearchRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.elasticsearch.core.geo.GeoPoint;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
 public class PropertyService {
 
     private final PropertyRepository propertyRepository;
-    private final ElasticsearchService elasticsearchService;
+    private final PropertySearchRepository propertySearchRepository;
     private final CloudinaryService cloudinaryService;
 
     public PropertyResponse createProperty(PropertyRequest request, String hostId) {
@@ -45,16 +46,12 @@ public class PropertyService {
                 .build();
 
         Property saved = propertyRepository.save(property);
-
-        elasticsearchService.indexProperty(
-                mapToDocument(saved));
-
         return mapToResponse(saved);
     }
 
     public PropertyResponse getProperty(String id) {
         Property property = propertyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Property not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
         return mapToResponse(property);
     }
 
@@ -72,28 +69,17 @@ public class PropertyService {
                 .collect(Collectors.toList());
     }
 
-    public List<PropertyResponse> searchWithElasticsearch(
+    public List<PropertyResponse> searchWithPostgres(
             String query, String city, Integer guests,
-            BigDecimal minPrice, BigDecimal maxPrice,
-            Double lat, Double lon, String radius) {
-
-        List<PropertyDocument> docs =
-                elasticsearchService.searchProperties(
-                        query, city, guests,
-                        minPrice, maxPrice,
-                        lat, lon, radius);
-
-        if (docs.isEmpty()) {
-            // Fallback to PostgreSQL if ES returns nothing
-            return searchProperties(city != null ? city : "",
-                    guests != null ? guests : 1,
-                    minPrice != null ? minPrice : BigDecimal.ZERO,
-                    maxPrice != null ? maxPrice :
-                            new BigDecimal("99999"));
-        }
-
-        return docs.stream()
-                .map(this::mapDocumentToResponse)
+            BigDecimal minPrice, BigDecimal maxPrice) {
+        return propertySearchRepository.search(
+                        blankToNull(query),
+                        blankToNull(city),
+                        guests,
+                        minPrice,
+                        maxPrice)
+                .stream()
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
@@ -103,15 +89,6 @@ public class PropertyService {
                 .collect(Collectors.toList());
     }
 
-    public void reindexAllProperties() {
-        List<Property> all = propertyRepository.findAll();
-        for (Property p : all) {
-            elasticsearchService.indexProperty(mapToDocument(p));
-        }
-        log.info("Reindexed {} properties into Elasticsearch",
-                all.size());
-    }
-
     public ImageUploadResponse uploadPropertyImages(
             String propertyId,
             List<MultipartFile> files,
@@ -119,10 +96,10 @@ public class PropertyService {
 
         Property property = propertyRepository.findById(propertyId)
                 .orElseThrow(() ->
-                        new RuntimeException("Property not found"));
+                        new ResourceNotFoundException("Property not found"));
 
         if (!property.getHostId().equals(hostId)) {
-            throw new RuntimeException(
+            throw new ResourceNotFoundException(
                     "Not authorized to upload images for this property");
         }
 
@@ -135,17 +112,17 @@ public class PropertyService {
         property.getImageUrls().addAll(urls);
         propertyRepository.save(property);
 
-        // Update ES index with new image URLs
-        elasticsearchService.indexProperty(mapToDocument(property));
-
-        log.info("Uploaded {} images for property {}",
-                urls.size(), propertyId);
+        log.info("Uploaded {} images for property {}", urls.size(), propertyId);
 
         return ImageUploadResponse.builder()
                 .propertyId(propertyId)
                 .imageUrls(property.getImageUrls())
                 .totalImages(property.getImageUrls().size())
                 .build();
+    }
+
+    private String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 
     private PropertyResponse mapToResponse(Property p) {
@@ -169,58 +146,6 @@ public class PropertyService {
                 .amenities(p.getAmenities())
                 .createdAt(p.getCreatedAt())
                 .imageUrls(p.getImageUrls())
-                .build();
-    }
-
-
-    private PropertyDocument mapToDocument(Property p) {
-        PropertyDocument doc = PropertyDocument.builder()
-                .id(p.getId())
-                .title(p.getTitle())
-                .description(p.getDescription())
-                .city(p.getCity())
-                .country(p.getCountry())
-                .address(p.getAddress())
-                .pricePerNight(p.getPricePerNight())
-                .maxGuests(p.getMaxGuests())
-                .bedrooms(p.getBedrooms())
-                .bathrooms(p.getBathrooms())
-                .propertyType(p.getPropertyType() != null ?
-                        p.getPropertyType().name() : null)
-                .amenities(p.getAmenities())
-                .status(p.getStatus().name())
-                .hostId(p.getHostId())
-                .build();
-
-        if (p.getLatitude() != null && p.getLongitude() != null) {
-            doc.setLocation(new GeoPoint(
-                    p.getLatitude(), p.getLongitude()));
-        }
-
-        return doc;
-    }
-
-    private PropertyResponse mapDocumentToResponse(
-            PropertyDocument doc) {
-        return PropertyResponse.builder()
-                .id(doc.getId())
-                .hostId(doc.getHostId())
-                .title(doc.getTitle())
-                .description(doc.getDescription())
-                .city(doc.getCity())
-                .country(doc.getCountry())
-                .address(doc.getAddress())
-                .latitude(doc.getLocation() != null ?
-                        doc.getLocation().getLat() : null)
-                .longitude(doc.getLocation() != null ?
-                        doc.getLocation().getLon() : null)
-                .pricePerNight(doc.getPricePerNight())
-                .maxGuests(doc.getMaxGuests())
-                .bedrooms(doc.getBedrooms())
-                .bathrooms(doc.getBathrooms())
-                .propertyType(doc.getPropertyType())
-                .status(doc.getStatus())
-                .amenities(doc.getAmenities())
                 .build();
     }
 }

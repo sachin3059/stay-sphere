@@ -61,7 +61,7 @@ StaySphere is a distributed property booking platform built to demonstrate real-
                         │
 ┌───────────────────────▼─────────────────────────────┐
 │                   Data Layer                         │
-│  PostgreSQL · Redis · Elasticsearch · S3/Cloudinary  │
+│  PostgreSQL · Redis · S3/Cloudinary  │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -77,7 +77,7 @@ StaySphere is a distributed property booking platform built to demonstrate real-
 | Database | PostgreSQL 16 |
 | Cache / Locks | Redis 7 |
 | Messaging | Apache Kafka |
-| Search | Elasticsearch 8 |
+| Search | PostgreSQL FTS (`tsvector` + `pg_trgm`) |
 | ORM | Spring Data JPA + Hibernate |
 | Security | Spring Security + JWT (jjwt 0.12.3) |
 | Email | SendGrid |
@@ -364,7 +364,6 @@ This starts:
 - Redis on port 6379
 - Apache Kafka on port 9092
 - Zookeeper on port 2181
-- Elasticsearch on port 9200
 
 Verify all containers are running:
 
@@ -378,7 +377,6 @@ staysphere-postgres        Running
 staysphere-redis           Running
 staysphere-zookeeper       Running
 staysphere-kafka           Running
-staysphere-elasticsearch   Running
 ```
 
 ### Step 3 — Configure environment variables
@@ -712,9 +710,9 @@ stay-sphere/
 │       └── controller/      # AuthController
 ├── property-service/
 │   └── src/main/java/com/staysphere/property/
-│       ├── entity/          # Property, Availability, PropertyDocument
-│       ├── repository/      # JPA + Elasticsearch repositories
-│       ├── service/         # PropertyService, CloudinaryService, ElasticsearchService
+│       ├── entity/          # Property, Availability, Pricing entities
+│       ├── repository/      # JPA + Postgres FTS search
+│       ├── service/         # PropertyService, CloudinaryService
 │       └── controller/      # PropertyController
 ├── booking-service/
 │   └── src/main/java/com/staysphere/booking/

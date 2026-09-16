@@ -31,7 +31,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/properties/search").permitAll()
                         .requestMatchers("/api/properties/{id}").permitAll()
                         .requestMatchers("GET", "/api/properties").permitAll()
-                        .requestMatchers("/api/properties/search/es").permitAll()
+                        .requestMatchers("/api/properties/search/advanced").permitAll()
                         .requestMatchers("/api/pricing/health").permitAll()
                         .requestMatchers("/api/pricing/calculate").permitAll()
                         .requestMatchers("/api/pricing/rules/**").permitAll()

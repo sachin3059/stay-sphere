@@ -63,24 +63,6 @@ services:
       timeout: 10s
       retries: 5
 
-  elasticsearch:
-    image: elasticsearch:8.13.0
-    container_name: staysphere-elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
-      - "xpack.ml.enabled=false"
-    ports:
-      - "9200:9200"
-    volumes:
-      - elastic_data:/usr/share/elasticsearch/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_health || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-
   auth-service:
     build:
       context: ./auth-service
@@ -232,4 +214,3 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  elastic_data:
