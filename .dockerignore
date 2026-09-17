@@ -5,7 +5,10 @@
 .env
 .env.*
 **/.gradle
-**/build
+**/build/tmp
+**/build/classes
+**/build/generated
+**/build/reports
 *.md
 docs
 agent-transcripts

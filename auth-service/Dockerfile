@@ -1,11 +1,7 @@
-FROM eclipse-temurin:21-jdk-alpine AS builder
-WORKDIR /workspace
-COPY . .
-RUN chmod +x gradlew && ./gradlew :auth-service:bootJar -x test --no-daemon
-
+# Build JARs on the host first:  ./gradlew bootJar -x test
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=builder /workspace/auth-service/build/libs/*.jar app.jar
+COPY auth-service/build/libs/*.jar app.jar
 ENV JAVA_OPTS="-Duser.timezone=UTC"
 EXPOSE 8081
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

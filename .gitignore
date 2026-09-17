@@ -41,3 +41,4 @@ out/
 .env.local
 .env.*.local
 !env.template
+.e2e-stripe-state.json

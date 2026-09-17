@@ -353,9 +353,26 @@ cd stay-sphere
 
 ### Step 2 — Start infrastructure with Docker Compose
 
+**Git Bash / Linux / macOS:**
+
 ```bash
-docker compose up -d
+./scripts/start-backend.sh
 ```
+
+**Windows PowerShell:**
+
+```powershell
+.\scripts\start-backend.ps1
+```
+
+Or manually (build JARs once on your PC, then start Docker — avoids Gradle downloads inside Docker):
+
+```bash
+./gradlew bootJar -x test
+docker compose up -d --build
+```
+
+Requires **Docker Desktop running** and **JDK 21**. Ensure repo-root `.env` exists.
 
 This starts:
 - PostgreSQL on port 5432
