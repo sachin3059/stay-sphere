@@ -61,22 +61,7 @@ public class AuthService {
                 .build();
 
         User saved = userRepository.save(user);
-
-        String accessToken = jwtUtil.generateToken(
-                saved.getEmail(), saved.getRole().name());
-
-        RefreshToken refreshToken = refreshTokenService
-                .createRefreshToken(saved.getId(), saved.getEmail());
-
-        return AuthResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken.getToken())
-                .email(saved.getEmail())
-                .role(saved.getRole().name())
-                .fullName(saved.getFullName())
-                .accessTokenExpiry(ACCESS_TOKEN_EXPIRY)
-                .refreshTokenExpiry(REFRESH_TOKEN_EXPIRY)
-                .build();
+        return issueTokens(saved);
     }
 
     @Transactional
@@ -90,9 +75,54 @@ public class AuthService {
             throw new BadRequestException("Invalid credentials");
         }
 
+        return issueTokens(user);
+    }
+
+    @Transactional
+    public AuthResponse refreshToken(String refreshToken) {
+        RefreshToken token = refreshTokenService
+                .validateRefreshToken(refreshToken);
+
+        User user = userRepository.findByEmail(token.getEmail())
+                .orElseThrow(() ->
+                        new BadRequestException("User not found"));
+
+        refreshTokenService.revokeToken(refreshToken);
+        log.info("Token refreshed for user: {}", user.getEmail());
+        return issueTokens(user);
+    }
+
+    @Transactional
+    public void logout(String refreshToken) {
+        refreshTokenService.revokeToken(refreshToken);
+        log.info("User logged out successfully");
+    }
+
+    /**
+     * Lets a GUEST upgrade to HOST so they can manage listings (no SQL required).
+     */
+    @Transactional
+    public AuthResponse becomeHost(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("User not found"));
+
+        if (user.getRole() == User.Role.HOST) {
+            return issueTokens(user);
+        }
+        if (user.getRole() != User.Role.GUEST) {
+            throw new BadRequestException(
+                    "Only guest accounts can become hosts");
+        }
+
+        user.setRole(User.Role.HOST);
+        User saved = userRepository.save(user);
+        log.info("User {} upgraded to HOST", saved.getEmail());
+        return issueTokens(saved);
+    }
+
+    private AuthResponse issueTokens(User user) {
         String accessToken = jwtUtil.generateToken(
                 user.getEmail(), user.getRole().name());
-
         RefreshToken refreshToken = refreshTokenService
                 .createRefreshToken(user.getId(), user.getEmail());
 
@@ -105,42 +135,5 @@ public class AuthService {
                 .accessTokenExpiry(ACCESS_TOKEN_EXPIRY)
                 .refreshTokenExpiry(REFRESH_TOKEN_EXPIRY)
                 .build();
-    }
-
-    @Transactional
-    public AuthResponse refreshToken(String refreshToken) {
-        RefreshToken token = refreshTokenService
-                .validateRefreshToken(refreshToken);
-
-        User user = userRepository.findByEmail(token.getEmail())
-                .orElseThrow(() ->
-                        new BadRequestException("User not found"));
-
-        // Generate new access token
-        String newAccessToken = jwtUtil.generateToken(
-                user.getEmail(), user.getRole().name());
-
-        // Rotate refresh token — revoke old, create new
-        refreshTokenService.revokeToken(refreshToken);
-        RefreshToken newRefreshToken = refreshTokenService
-                .createRefreshToken(user.getId(), user.getEmail());
-
-        log.info("Token refreshed for user: {}", user.getEmail());
-
-        return AuthResponse.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken.getToken())
-                .email(user.getEmail())
-                .role(user.getRole().name())
-                .fullName(user.getFullName())
-                .accessTokenExpiry(ACCESS_TOKEN_EXPIRY)
-                .refreshTokenExpiry(REFRESH_TOKEN_EXPIRY)
-                .build();
-    }
-
-    @Transactional
-    public void logout(String refreshToken) {
-        refreshTokenService.revokeToken(refreshToken);
-        log.info("User logged out successfully");
     }
 }

@@ -15,8 +15,9 @@ We land **one phase per commit** on `main` so each step stays reviewable.
 | **6** | Saga / checkout | Done |
 | **7** | Observability (correlation id, actuator) | Done |
 | **8** | RBAC & token denylist | Done |
-| **9** | Tests, CI, demo docs | **Done (this step)** |
+| **9** | Tests, CI, demo docs | Done |
+| **10** | Pre-frontend backend (CORS, become-host API, Flyway/Docker E2E) | Done |
 
-See [adr/](adr/) for decisions per phase and [DEMO.md](DEMO.md) for a walkthrough.
+See [adr/](adr/) for decisions per phase, [DEMO.md](DEMO.md) for a walkthrough, and [BACKEND_READINESS.md](BACKEND_READINESS.md) before building the UI.
 
 **Note:** The branch `cursor/platform-improvement-roadmap` contains an all-in-one version of the full plan. We are **not** merging that branch; we rebuild the same ideas here step by step.

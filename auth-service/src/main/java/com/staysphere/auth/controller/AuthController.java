@@ -10,6 +10,7 @@ import com.staysphere.common.security.TokenDenylistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -46,6 +47,15 @@ public class AuthController {
                 ApiResponse.success("Token refreshed",
                         authService.refreshToken(
                                 request.getRefreshToken())));
+    }
+
+    @PostMapping("/become-host")
+    public ResponseEntity<ApiResponse<AuthResponse>> becomeHost() {
+        String email = SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        return ResponseEntity.ok(
+                ApiResponse.success("Upgraded to host",
+                        authService.becomeHost(email)));
     }
 
     @PostMapping("/logout")

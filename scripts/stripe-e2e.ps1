@@ -29,20 +29,17 @@ Write-Host "`n=== 1) Stripe config ===" -ForegroundColor Cyan
 $config = Invoke-Api GET "$base/api/payments/stripe/config"
 Write-Host "gateway=$($config.data.gateway)"
 
-Write-Host "`n=== 2) Register host: $hostEmail ===" -ForegroundColor Cyan
-Invoke-Api POST "$base/api/auth/register" -Body @{
+Write-Host "`n=== 2) Register host user: $hostEmail ===" -ForegroundColor Cyan
+$hostReg = Invoke-Api POST "$base/api/auth/register" -Body @{
     email    = $hostEmail
     password = $pass
     fullName = "Host User"
-} | Out-Null
+}
+$guestTokenForHost = $hostReg.data.accessToken
 
-Write-Host "`n=== 3) Promote HOST in Postgres ===" -ForegroundColor Cyan
-docker exec staysphere-postgres psql -U staysphere -d staysphere -c "UPDATE users SET role = 'HOST' WHERE email = '$hostEmail';"
-
-Write-Host "`n=== 4) Host login ===" -ForegroundColor Cyan
-$hostAuth = Invoke-Api POST "$base/api/auth/login" -Body @{
-    email    = $hostEmail
-    password = $pass
+Write-Host "`n=== 3) Become HOST (API) ===" -ForegroundColor Cyan
+$hostAuth = Invoke-Api POST "$base/api/auth/become-host" -Headers @{
+    Authorization = "Bearer $guestTokenForHost"
 }
 $hostToken = $hostAuth.data.accessToken
 if ($hostAuth.data.role -ne "HOST") {

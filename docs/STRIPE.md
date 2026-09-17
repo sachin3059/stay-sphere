@@ -29,7 +29,7 @@ stripe listen --forward-to localhost:8080/api/payments/webhooks/stripe
 
 ## 3. Pay for a booking
 
-1. Register / login → copy `accessToken`.
+1. Register / login → copy `accessToken`. Hosts: `POST /api/auth/become-host` then use new token.
 2. Create a **PENDING** booking (`POST /api/bookings` with `Idempotency-Key`).
 3. Open checkout UI: **http://localhost:8080/api/payments/checkout** (or `:8084` direct).
 4. Paste JWT, booking id, host id, idempotency key (e.g. `pay-<bookingId>`).

@@ -39,17 +39,14 @@ json_pretty() {
 echo "=== 1) Stripe config ==="
 curl -sf "$BASE/api/payments/stripe/config" | json_pretty
 
-echo "=== 2) Register host ==="
-curl -sf -X POST "$BASE/api/auth/register" -H "Content-Type: application/json" \
-  -d "{\"email\":\"$HOST_EMAIL\",\"password\":\"$PASS\",\"fullName\":\"Host User\"}" | json_pretty
+echo "=== 2) Register host user ==="
+HOST_REG=$(curl -sf -X POST "$BASE/api/auth/register" -H "Content-Type: application/json" \
+  -d "{\"email\":\"$HOST_EMAIL\",\"password\":\"$PASS\",\"fullName\":\"Host User\"}")
+GUEST_TOKEN_FOR_HOST=$(echo "$HOST_REG" | json_get data.accessToken)
 
-echo "=== 3) Promote HOST ==="
-docker exec staysphere-postgres psql -U staysphere -d staysphere \
-  -c "UPDATE users SET role = 'HOST' WHERE email = '$HOST_EMAIL';"
-
-echo "=== 4) Host login ==="
-HOST_JSON=$(curl -sf -X POST "$BASE/api/auth/login" -H "Content-Type: application/json" \
-  -d "{\"email\":\"$HOST_EMAIL\",\"password\":\"$PASS\"}")
+echo "=== 3) Become HOST (API) ==="
+HOST_JSON=$(curl -sf -X POST "$BASE/api/auth/become-host" \
+  -H "Authorization: Bearer $GUEST_TOKEN_FOR_HOST")
 HOST_TOKEN=$(echo "$HOST_JSON" | json_get data.accessToken)
 echo "role=$(echo "$HOST_JSON" | json_get data.role)"
 

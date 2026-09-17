@@ -469,8 +469,9 @@ All should return `{service-name} service is running`.
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| POST | `/api/auth/register` | None | Register new user |
+| POST | `/api/auth/register` | None | Register new user (always **GUEST**) |
 | POST | `/api/auth/login` | None | Login, returns JWT |
+| POST | `/api/auth/become-host` | JWT | Upgrade **GUEST** → **HOST** (new tokens) |
 | POST | `/api/auth/refresh` | None | Refresh JWT token |
 | GET | `/api/auth/health` | None | Health check |
 
