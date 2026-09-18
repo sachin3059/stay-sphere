@@ -30,7 +30,7 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex" aria-label="Main">
-          <NavLink to="/" className={navLinkClass} end>
+          <NavLink to="/explore" className={navLinkClass}>
             Explore
           </NavLink>
           <NavLink to="/how-it-works" className={navLinkClass}>

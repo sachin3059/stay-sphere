@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { MapPin, Search, Shield, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 const highlights = [
   {
@@ -23,6 +24,19 @@ const highlights = [
 ];
 
 export function HomePage() {
+  const navigate = useNavigate();
+  const [city, setCity] = useState("");
+  const [guests, setGuests] = useState("2");
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const qs = new URLSearchParams();
+    if (city.trim()) qs.set("city", city.trim());
+    if (guests) qs.set("guests", guests);
+    const q = qs.toString();
+    navigate(q ? `/explore?${q}` : "/explore");
+  }
+
   return (
     <div>
       <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-brand-50/80 to-surface">
@@ -49,28 +63,33 @@ export function HomePage() {
             <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted">
               Search stays
             </p>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <form
+              onSubmit={handleSearch}
+              className="flex flex-col gap-3 sm:flex-row sm:items-end"
+            >
               <div className="flex-1">
                 <Input
                   label="Where"
                   placeholder="City, e.g. Pune"
-                  disabled
-                  aria-describedby="search-hint"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
                 />
               </div>
               <div className="flex-1">
-                <Input label="Guests" type="number" placeholder="2" disabled />
+                <Input
+                  label="Guests"
+                  type="number"
+                  min={1}
+                  placeholder="2"
+                  value={guests}
+                  onChange={(e) => setGuests(e.target.value)}
+                />
               </div>
-              <Button className="w-full sm:w-auto" disabled>
+              <Button type="submit" className="w-full sm:w-auto">
                 <Search className="h-4 w-4" />
                 Search
               </Button>
-            </div>
-            <p id="search-hint" className="mt-3 text-xs text-stone-400">
-              Listing search ships in the next step — backend{" "}
-              <code className="rounded bg-stone-100 px-1">/api/properties</code>{" "}
-              is ready.
-            </p>
+            </form>
           </Card>
 
           <div className="mt-8 flex flex-wrap gap-3">

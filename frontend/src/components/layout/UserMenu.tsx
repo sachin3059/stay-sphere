@@ -2,9 +2,9 @@ import { becomeHostRequest, logoutRequest } from "@/features/auth/api";
 import { applyAuthResponse } from "@/features/auth/session";
 import { useAuthStore } from "@/store/authStore";
 import { useMutation } from "@tanstack/react-query";
-import { Building2, ChevronDown, LogOut } from "lucide-react";
+import { Building2, ChevronDown, LogOut, Plus, Home } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export function UserMenu() {
   const navigate = useNavigate();
@@ -93,6 +93,29 @@ export function UserMenu() {
               <Building2 className="h-4 w-4 text-brand-600" />
               {becomeHost.isPending ? "Upgrading…" : "Become a host"}
             </button>
+          )}
+
+          {user.role === "HOST" && (
+            <>
+              <Link
+                to="/host/listings/new"
+                role="menuitem"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm text-ink hover:bg-stone-50"
+                onClick={() => setOpen(false)}
+              >
+                <Plus className="h-4 w-4 text-brand-600" />
+                List a property
+              </Link>
+              <Link
+                to="/host/listings"
+                role="menuitem"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm text-ink hover:bg-stone-50"
+                onClick={() => setOpen(false)}
+              >
+                <Home className="h-4 w-4 text-stone-500" />
+                My listings
+              </Link>
+            </>
           )}
 
           <button
