@@ -9,7 +9,9 @@ import { ExplorePage } from "@/pages/ExplorePage";
 import { MyBookingsPage } from "@/pages/MyBookingsPage";
 import { HomePage } from "@/pages/HomePage";
 import { HowItWorksPage } from "@/pages/HowItWorksPage";
+import { HostListingPhotosPage } from "@/pages/host/HostListingPhotosPage";
 import { HostListingsPage } from "@/pages/host/HostListingsPage";
+import { HostReservationsPage } from "@/pages/host/HostReservationsPage";
 import { NewListingPage } from "@/pages/host/NewListingPage";
 import { PropertyDetailPage } from "@/pages/PropertyDetailPage";
 import { LoginPage } from "@/pages/LoginPage";
@@ -58,10 +60,26 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "/host/reservations",
+        element: (
+          <HostOnlyRoute>
+            <HostReservationsPage />
+          </HostOnlyRoute>
+        ),
+      },
+      {
         path: "/host/listings/new",
         element: (
           <HostOnlyRoute>
             <NewListingPage />
+          </HostOnlyRoute>
+        ),
+      },
+      {
+        path: "/host/listings/:id/photos",
+        element: (
+          <HostOnlyRoute>
+            <HostListingPhotosPage />
           </HostOnlyRoute>
         ),
       },

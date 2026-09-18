@@ -1,10 +1,14 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import type { Booking } from "@/features/bookings/types";
 import { cancelBooking, fetchMyBookings } from "@/features/bookings/api";
+import { createStripeIntent } from "@/features/payments/api";
 import { formatInr } from "@/lib/format";
+import { ApiError } from "@/lib/api/types";
 import { useAuthStore } from "@/store/authStore";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 function statusColor(status: string) {
   switch (status) {
@@ -23,8 +27,10 @@ function statusColor(status: string) {
 export function MyBookingsPage() {
   const accessToken = useAuthStore((s) => s.accessToken)!;
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const location = useLocation();
   const flash = (location.state as { message?: string } | null)?.message;
+  const [payError, setPayError] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["my-bookings"],
@@ -34,6 +40,28 @@ export function MyBookingsPage() {
   const cancel = useMutation({
     mutationFn: (id: string) => cancelBooking(accessToken, id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["my-bookings"] }),
+  });
+
+  const resumePay = useMutation({
+    mutationFn: async (booking: Booking) => {
+      const intent = await createStripeIntent(accessToken, {
+        bookingId: booking.id,
+        hostId: booking.hostId,
+        idempotencyKey: `pay-${booking.id}`,
+      });
+      return { booking, intent };
+    },
+    onSuccess: ({ booking, intent }) => {
+      setPayError(null);
+      navigate(`/bookings/${booking.id}/pay`, {
+        state: { booking, intent },
+      });
+    },
+    onError: (err: unknown) => {
+      setPayError(
+        err instanceof ApiError ? err.message : "Could not start payment.",
+      );
+    },
   });
 
   return (
@@ -49,6 +77,12 @@ export function MyBookingsPage() {
 
       {error && (
         <p className="mt-6 text-sm text-red-600">Could not load bookings.</p>
+      )}
+
+      {payError && (
+        <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+          {payError}
+        </p>
       )}
 
       {isLoading ? (
@@ -80,14 +114,23 @@ export function MyBookingsPage() {
                     </Link>
                   </div>
                   {b.status === "PENDING" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={cancel.isPending}
-                      onClick={() => cancel.mutate(b.id)}
-                    >
-                      Cancel
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        disabled={resumePay.isPending}
+                        onClick={() => resumePay.mutate(b)}
+                      >
+                        {resumePay.isPending ? "Loading…" : "Complete payment"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={cancel.isPending}
+                        onClick={() => cancel.mutate(b.id)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   )}
                 </div>
               </Card>

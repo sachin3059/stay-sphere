@@ -2,7 +2,15 @@ import { becomeHostRequest, logoutRequest } from "@/features/auth/api";
 import { applyAuthResponse } from "@/features/auth/session";
 import { useAuthStore } from "@/store/authStore";
 import { useMutation } from "@tanstack/react-query";
-import { Building2, ChevronDown, LogOut, Plus, Home, Luggage } from "lucide-react";
+import {
+  Building2,
+  ChevronDown,
+  CalendarDays,
+  LogOut,
+  Plus,
+  Home,
+  Luggage,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -124,6 +132,15 @@ export function UserMenu() {
               >
                 <Home className="h-4 w-4 text-stone-500" />
                 My listings
+              </Link>
+              <Link
+                to="/host/reservations"
+                role="menuitem"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm text-ink hover:bg-stone-50"
+                onClick={() => setOpen(false)}
+              >
+                <CalendarDays className="h-4 w-4 text-stone-500" />
+                Reservations
               </Link>
             </>
           )}

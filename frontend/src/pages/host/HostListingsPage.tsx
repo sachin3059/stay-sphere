@@ -43,8 +43,14 @@ export function HostListingsPage() {
       ) : data && data.length > 0 ? (
         <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {data.map((p) => (
-            <li key={p.id}>
+            <li key={p.id} className="flex flex-col gap-2">
               <PropertyCard property={p} />
+              <Link
+                to={`/host/listings/${p.id}/photos`}
+                className="text-center text-sm font-medium text-brand-700 hover:underline"
+              >
+                {p.imageUrls?.length ? "Manage photos" : "Add photos"}
+              </Link>
             </li>
           ))}
         </ul>

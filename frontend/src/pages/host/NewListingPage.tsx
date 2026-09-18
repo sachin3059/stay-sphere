@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { PropertyPhotoPicker } from "@/components/properties/PropertyPhotoPicker";
 import {
   createPricingRule,
   createProperty,
+  uploadPropertyImages,
 } from "@/features/properties/api";
 import type { PropertyType } from "@/features/properties/types";
 import { ApiError } from "@/lib/api/types";
@@ -37,6 +39,7 @@ export function NewListingPage() {
   const [bathrooms, setBathrooms] = useState("1");
   const [propertyType, setPropertyType] = useState<PropertyType>("APARTMENT");
   const [amenities, setAmenities] = useState("WiFi, Kitchen");
+  const [photos, setPhotos] = useState<File[]>([]);
 
   const submit = useMutation({
     mutationFn: async () => {
@@ -64,6 +67,9 @@ export function NewListingPage() {
         basePrice: price,
         minimumStay: 1,
       });
+      if (photos.length > 0) {
+        await uploadPropertyImages(accessToken, property.id, photos);
+      }
       return property;
     },
     onSuccess: (property) => {
@@ -196,6 +202,11 @@ export function NewListingPage() {
             label="Amenities (comma-separated)"
             value={amenities}
             onChange={(e) => setAmenities(e.target.value)}
+          />
+          <PropertyPhotoPicker
+            files={photos}
+            onChange={setPhotos}
+            disabled={submit.isPending}
           />
           {error && (
             <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">

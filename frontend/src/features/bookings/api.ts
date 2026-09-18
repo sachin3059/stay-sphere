@@ -18,6 +18,12 @@ export async function fetchMyBookings(token: string) {
   return apiRequest<Booking[]>("/api/bookings/my", { token });
 }
 
+export async function fetchPropertyBookings(token: string, propertyId: string) {
+  return apiRequest<Booking[]>(`/api/bookings/property/${propertyId}`, {
+    token,
+  });
+}
+
 export async function fetchBooking(token: string, bookingId: string) {
   return apiRequest<Booking>(`/api/bookings/${bookingId}`, { token });
 }

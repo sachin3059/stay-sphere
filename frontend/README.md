@@ -36,7 +36,9 @@ src/
 2. **Auth** — register, login, logout, become-host
 3. **Listings** — explore, search, property detail
 4. **Host** — create property + pricing
-5. **Booking & Stripe** — book, pay, my trips (current)
+5. **Booking & Stripe** — book, pay, my trips
+6. **Host ops & guest polish** — host reservations, resume pending payment
+7. **Listing photos** — Cloudinary upload on create + manage photos (current)
 
 ### Booking flow (manual test)
 
@@ -46,3 +48,17 @@ src/
 4. After success you land on **My trips** with status `CONFIRMED` (or `PENDING` briefly if Kafka is still catching up — use cancel only while pending).
 
 Routes: `/properties/:id/book`, `/bookings/:id/pay`, `/bookings/my`, `/bookings/complete` (Stripe redirect).
+
+### Step 6 (manual test)
+
+- **Guest:** My trips → **Complete payment** on a `PENDING` booking (reuses Stripe intent idempotency `pay-{bookingId}`).
+- **Host:** User menu → **Reservations** (`/host/reservations`) — bookings for all your listings via `GET /api/bookings/property/{id}`.
+
+### Step 7 (photos)
+
+Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` in repo-root `.env` and restart **property-service**. Then:
+
+- **List a property** — choose photos before **Publish listing**, or
+- **My listings** → **Add photos** / **Manage photos** (`/host/listings/:id/photos`).
+
+**Later steps:** token refresh on 401, waitlist UI, OAuth (Google/GitHub).

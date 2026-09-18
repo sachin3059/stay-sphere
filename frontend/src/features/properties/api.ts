@@ -1,4 +1,5 @@
-import { apiData } from "@/lib/api/client";
+import { apiData, getApiBaseUrl } from "@/lib/api/client";
+import { ApiError, type ApiErrorBody, type ApiResponse } from "@/lib/api/types";
 import type {
   CreatePropertyPayload,
   CreatePricingRulePayload,
@@ -55,6 +56,59 @@ export async function createPricingRule(
     body,
     token,
   });
+}
+
+export type ImageUploadResult = {
+  propertyId: string;
+  imageUrls: string[];
+  totalImages: number;
+};
+
+export async function uploadPropertyImages(
+  token: string,
+  propertyId: string,
+  files: File[],
+) {
+  if (files.length === 0) {
+    throw new Error("No files selected");
+  }
+  const form = new FormData();
+  for (const file of files) {
+    form.append("files", file);
+  }
+  const url = `${getApiBaseUrl()}/api/properties/${propertyId}/images`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: form,
+  });
+
+  const text = await response.text();
+  let json: unknown = null;
+  if (text) {
+    try {
+      json = JSON.parse(text);
+    } catch {
+      /* non-json */
+    }
+  }
+
+  if (!response.ok) {
+    const errBody = json as ApiErrorBody | null;
+    const message =
+      errBody?.message ??
+      (typeof json === "object" && json && "error" in json
+        ? String((json as { error: string }).error)
+        : response.statusText) ??
+      "Upload failed";
+    throw new ApiError(message, response.status, errBody ?? undefined);
+  }
+
+  const wrapped = json as ApiResponse<ImageUploadResult>;
+  return wrapped.data;
 }
 
 export async function searchProperties(params: PropertySearchParams) {
