@@ -403,6 +403,19 @@ All secrets and integration keys live in **one file** at the repo root: **`.env`
 
 Do not put real credentials in `application.yml` or `docker-compose.yml`.
 
+### Step 4 — Frontend (React)
+
+```bash
+cd frontend
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173). Set `CORS_ALLOWED_ORIGINS=http://localhost:5173` in repo-root `.env` and restart **api-gateway** if the browser blocks API calls.
+
+See [frontend/README.md](frontend/README.md) for structure and the incremental build plan.
+
 ---
 
 ## Running the Services
