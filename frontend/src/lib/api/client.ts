@@ -10,6 +10,7 @@ type RequestOptions = {
   method?: string;
   body?: unknown;
   token?: string | null;
+  idempotencyKey?: string;
   headers?: Record<string, string>;
 };
 
@@ -17,7 +18,8 @@ export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { method = "GET", body, token, headers = {} } = options;
+  const { method = "GET", body, token, idempotencyKey, headers = {} } =
+    options;
   const url = `${getApiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
 
   const reqHeaders: Record<string, string> = {
@@ -30,6 +32,9 @@ export async function apiRequest<T>(
   }
   if (token) {
     reqHeaders.Authorization = `Bearer ${token}`;
+  }
+  if (idempotencyKey) {
+    reqHeaders["Idempotency-Key"] = idempotencyKey;
   }
 
   const response = await fetch(url, {

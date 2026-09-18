@@ -59,6 +59,14 @@ public class BookingService {
         RedisLockService.LockHandle lock =
                 redisLockService.acquirePropertyLock(request.getPropertyId());
         if (!lock.acquired()) {
+            boolean ownPending = bookingRepository.findByGuestId(guestId).stream()
+                    .anyMatch(b -> b.getPropertyId().equals(request.getPropertyId())
+                            && b.getStatus() == Booking.BookingStatus.PENDING);
+            if (ownPending) {
+                throw new BookingException(
+                        "You already have a pending booking for this property. "
+                                + "Open My trips to pay or cancel it, then try again.");
+            }
             throw new BookingException(
                     "Property is being booked by another user. Try again shortly.");
         }
@@ -105,8 +113,10 @@ public class BookingService {
             log.info("Booking created: {}", saved.getId());
             return mapToResponse(saved);
         } catch (BookingException e) {
-            redisLockService.releaseLock(lock);
             throw e;
+        } finally {
+            // Hold lock only for the create transaction; overlaps are enforced in Postgres.
+            redisLockService.releaseLock(lock);
         }
     }
 

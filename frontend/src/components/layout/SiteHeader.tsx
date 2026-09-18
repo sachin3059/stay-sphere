@@ -40,7 +40,15 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-2">
           {accessToken ? (
-            <UserMenu />
+            <>
+              <NavLink
+                to="/bookings/my"
+                className="hidden text-sm font-medium text-stone-600 hover:text-ink sm:inline"
+              >
+                My trips
+              </NavLink>
+              <UserMenu />
+            </>
           ) : (
             <>
               <Link to="/login">

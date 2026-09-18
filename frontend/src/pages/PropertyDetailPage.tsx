@@ -91,16 +91,20 @@ export function PropertyDetailPage() {
             <span className="text-base font-normal text-muted"> / night</span>
           </p>
           {accessToken ? (
-            <Button className="mt-4 w-full" disabled title="Coming in Step 5">
-              Book this stay
-            </Button>
+            <Link to={`/properties/${property.id}/book`} className="mt-4 block">
+              <Button className="w-full">Book this stay</Button>
+            </Link>
           ) : (
-            <Link to="/login" className="mt-4 block">
+            <Link
+              to="/login"
+              state={{ from: `/properties/${property.id}/book` }}
+              className="mt-4 block"
+            >
               <Button className="w-full">Sign in to book</Button>
             </Link>
           )}
           <p className="mt-2 text-center text-xs text-stone-400">
-            Booking flow in the next step
+            Secure checkout with Stripe
           </p>
         </Card>
       </div>

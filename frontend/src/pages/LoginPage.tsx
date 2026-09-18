@@ -6,10 +6,13 @@ import { applyAuthResponse } from "@/features/auth/session";
 import { ApiError } from "@/lib/api/types";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo =
+    (location.state as { from?: string } | null)?.from ?? "/";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
@@ -18,7 +21,7 @@ export function LoginPage() {
     mutationFn: loginRequest,
     onSuccess: (data) => {
       applyAuthResponse(data);
-      navigate("/", { replace: true });
+      navigate(redirectTo, { replace: true });
     },
     onError: (err: unknown) => {
       if (err instanceof ApiError) {
