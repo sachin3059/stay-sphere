@@ -3,12 +3,9 @@ package com.staysphere.common.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
 import java.util.Date;
 
 @Component
@@ -20,8 +17,8 @@ public class JwtUtil {
     @Value("${jwt.expiration:86400000}")
     private long expiration;
 
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+    private javax.crypto.SecretKey getSigningKey() {
+        return JwtSecretKeys.hmacShaKey(secret);
     }
 
     public String generateToken(String email, String role) {

@@ -3,6 +3,7 @@ import { useAuthStore } from "@/store/authStore";
 import { Home, LogIn, UserPlus } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { Button } from "../ui/Button";
+import { UserMenu } from "./UserMenu";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `text-sm font-medium transition-colors ${
@@ -10,8 +11,7 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 export function SiteHeader() {
-  const user = useAuthStore((s) => s.user);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
+  const accessToken = useAuthStore((s) => s.accessToken);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/80 bg-surface/90 backdrop-blur-md">
@@ -39,10 +39,8 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          {isAuthenticated && user ? (
-            <span className="hidden text-sm text-muted sm:inline">
-              Hi, {user.fullName.split(" ")[0]}
-            </span>
+          {accessToken ? (
+            <UserMenu />
           ) : (
             <>
               <Link to="/login">

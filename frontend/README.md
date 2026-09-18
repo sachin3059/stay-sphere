@@ -32,7 +32,7 @@ src/
 
 ## Build order (incremental)
 
-1. **Foundation** — layout, design tokens, API client, home (current)
-2. **Auth** — register, login, logout, become-host
-3. **Listings** — search, detail, host create property
+1. **Foundation** — layout, design tokens, API client, home
+2. **Auth** — register, login, logout, become-host (current)
+3. **Listings** — search, detail, host create property (next)
 4. **Booking & Stripe** — book flow + payment UI
