@@ -1,8 +1,10 @@
 package com.staysphere.pricing.service;
 
+import com.staysphere.common.exception.ResourceNotFoundException;
 import com.staysphere.pricing.dto.*;
 import com.staysphere.pricing.entity.PricingRule;
 import com.staysphere.pricing.repository.PricingRuleRepository;
+import com.staysphere.property.repository.PropertyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import java.util.List;
 public class PricingService {
 
     private final PricingRuleRepository pricingRuleRepository;
+    private final PropertyRepository propertyRepository;
 
     public PricingRuleResponse createRule(PricingRuleRequest request) {
         PricingRule rule = PricingRule.builder()
@@ -125,6 +128,50 @@ public class PricingService {
                         propertyId, PricingRule.RuleStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException(
                         "No pricing rule found for property: " + propertyId)));
+    }
+
+    public PricingRuleResponse updateRule(
+            String propertyId,
+            PricingRuleRequest request,
+            String hostId) {
+        propertyRepository.findById(propertyId)
+                .filter(p -> p.getHostId().equals(hostId))
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Not authorized to update pricing for this property"));
+
+        PricingRule rule = pricingRuleRepository
+                .findByPropertyIdAndStatus(
+                        propertyId, PricingRule.RuleStatus.ACTIVE)
+                .orElseThrow(() -> new RuntimeException(
+                        "No pricing rule found for property: " + propertyId));
+
+        if (request.getBasePrice() != null) {
+            rule.setBasePrice(request.getBasePrice());
+        }
+        if (request.getMinimumStay() != null) {
+            rule.setMinimumStay(request.getMinimumStay());
+        }
+        if (request.getWeekendMultiplier() != null) {
+            rule.setWeekendMultiplier(request.getWeekendMultiplier());
+        }
+        if (request.getPeakSeasonMultiplier() != null) {
+            rule.setPeakSeasonMultiplier(request.getPeakSeasonMultiplier());
+        }
+        if (request.getPeakSeasonStart() != null) {
+            rule.setPeakSeasonStart(request.getPeakSeasonStart());
+        }
+        if (request.getPeakSeasonEnd() != null) {
+            rule.setPeakSeasonEnd(request.getPeakSeasonEnd());
+        }
+        if (request.getLongStayDiscount() != null) {
+            rule.setLongStayDiscount(request.getLongStayDiscount());
+        }
+        if (request.getLongStayThresholdNights() != null) {
+            rule.setLongStayThresholdNights(
+                    request.getLongStayThresholdNights());
+        }
+
+        return mapToResponse(pricingRuleRepository.save(rule));
     }
 
     private boolean hasWeekendNight(LocalDate checkIn, LocalDate checkOut) {

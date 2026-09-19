@@ -68,4 +68,24 @@ public class CloudinaryService {
             log.error("Cloudinary delete error: {}", e.getMessage());
         }
     }
+
+    public void deleteImageByUrl(String secureUrl) {
+        deleteImage(extractPublicId(secureUrl));
+    }
+
+    static String extractPublicId(String secureUrl) {
+        int uploadIdx = secureUrl.indexOf("/upload/");
+        if (uploadIdx < 0) {
+            throw new IllegalArgumentException("Not a Cloudinary image URL");
+        }
+        String path = secureUrl.substring(uploadIdx + "/upload/".length());
+        if (path.startsWith("v") && path.contains("/")) {
+            path = path.substring(path.indexOf('/') + 1);
+        }
+        int dot = path.lastIndexOf('.');
+        if (dot > 0) {
+            path = path.substring(0, dot);
+        }
+        return path;
+    }
 }

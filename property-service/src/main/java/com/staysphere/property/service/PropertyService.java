@@ -5,6 +5,8 @@ import com.staysphere.property.dto.ImageUploadResponse;
 import com.staysphere.property.dto.PropertyRequest;
 import com.staysphere.property.dto.PropertyResponse;
 import com.staysphere.property.entity.Property;
+import com.staysphere.pricing.entity.PricingRule;
+import com.staysphere.pricing.repository.PricingRuleRepository;
 import com.staysphere.property.repository.PropertyRepository;
 import com.staysphere.property.repository.PropertySearchRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,6 +26,7 @@ public class PropertyService {
 
     private final PropertyRepository propertyRepository;
     private final PropertySearchRepository propertySearchRepository;
+    private final PricingRuleRepository pricingRuleRepository;
     private final CloudinaryService cloudinaryService;
 
     public PropertyResponse createProperty(PropertyRequest request, String hostId) {
@@ -85,8 +89,102 @@ public class PropertyService {
 
     public List<PropertyResponse> getAllProperties() {
         return propertyRepository.findAll()
-                .stream().map(this::mapToResponse)
+                .stream()
+                .filter(p -> p.getStatus() == Property.PropertyStatus.ACTIVE)
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    public PropertyResponse updateProperty(
+            String propertyId,
+            PropertyRequest request,
+            String hostId) {
+        Property property = loadHostProperty(propertyId, hostId);
+
+        property.setTitle(request.getTitle());
+        property.setDescription(request.getDescription());
+        property.setCity(request.getCity());
+        property.setCountry(request.getCountry());
+        property.setAddress(request.getAddress());
+        if (request.getLatitude() != null) {
+            property.setLatitude(request.getLatitude());
+        }
+        if (request.getLongitude() != null) {
+            property.setLongitude(request.getLongitude());
+        }
+        property.setPricePerNight(request.getPricePerNight());
+        property.setMaxGuests(request.getMaxGuests());
+        property.setBedrooms(request.getBedrooms());
+        property.setBathrooms(request.getBathrooms());
+        if (request.getPropertyType() != null) {
+            property.setPropertyType(Property.PropertyType.valueOf(
+                    request.getPropertyType().toUpperCase()));
+        }
+        if (request.getAmenities() != null) {
+            property.setAmenities(new ArrayList<>(request.getAmenities()));
+        }
+
+        Property saved = propertyRepository.save(property);
+        syncPricingBasePrice(propertyId, request.getPricePerNight());
+        return mapToResponse(saved);
+    }
+
+    public PropertyResponse updatePropertyStatus(
+            String propertyId,
+            String status,
+            String hostId) {
+        Property property = loadHostProperty(propertyId, hostId);
+        Property.PropertyStatus next = Property.PropertyStatus.valueOf(
+                status.toUpperCase());
+        if (next != Property.PropertyStatus.ACTIVE
+                && next != Property.PropertyStatus.INACTIVE) {
+            throw new IllegalArgumentException(
+                    "Only ACTIVE or INACTIVE status is allowed");
+        }
+        property.setStatus(next);
+        return mapToResponse(propertyRepository.save(property));
+    }
+
+    public PropertyResponse removePropertyImage(
+            String propertyId,
+            String imageUrl,
+            String hostId) {
+        Property property = loadHostProperty(propertyId, hostId);
+        if (property.getImageUrls() == null
+                || !property.getImageUrls().contains(imageUrl)) {
+            throw new ResourceNotFoundException("Image not found on listing");
+        }
+        try {
+            cloudinaryService.deleteImageByUrl(imageUrl);
+        } catch (IllegalArgumentException ex) {
+            log.warn("Skipping Cloudinary delete for url: {}", imageUrl);
+        }
+        property.getImageUrls().remove(imageUrl);
+        return mapToResponse(propertyRepository.save(property));
+    }
+
+    private Property loadHostProperty(String propertyId, String hostId) {
+        Property property = propertyRepository.findById(propertyId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Property not found"));
+        if (!property.getHostId().equals(hostId)) {
+            throw new ResourceNotFoundException(
+                    "Not authorized to modify this property");
+        }
+        return property;
+    }
+
+    private void syncPricingBasePrice(String propertyId, BigDecimal basePrice) {
+        if (basePrice == null) {
+            return;
+        }
+        pricingRuleRepository
+                .findByPropertyIdAndStatus(
+                        propertyId, PricingRule.RuleStatus.ACTIVE)
+                .ifPresent(rule -> {
+                    rule.setBasePrice(basePrice);
+                    pricingRuleRepository.save(rule);
+                });
     }
 
     public ImageUploadResponse uploadPropertyImages(

@@ -4,6 +4,7 @@ import com.staysphere.common.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -30,12 +31,14 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/properties/health").permitAll()
                         .requestMatchers("/api/properties/search").permitAll()
-                        .requestMatchers("/api/properties/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/properties/{id}")
+                                .permitAll()
                         .requestMatchers("GET", "/api/properties").permitAll()
                         .requestMatchers("/api/properties/search/advanced").permitAll()
                         .requestMatchers("/api/pricing/health").permitAll()
                         .requestMatchers("/api/pricing/calculate").permitAll()
-                        .requestMatchers("/api/pricing/rules/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/pricing/rules/**")
+                                .permitAll()
                         .requestMatchers("/api/availability/health").permitAll()
                         .requestMatchers("/api/availability/*/ranges").permitAll()
                         .requestMatchers("/api/availability/*/check").permitAll()

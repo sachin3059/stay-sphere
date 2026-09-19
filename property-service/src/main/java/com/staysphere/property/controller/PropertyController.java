@@ -4,6 +4,7 @@ import com.staysphere.common.ApiResponse;
 import com.staysphere.property.dto.ImageUploadResponse;
 import com.staysphere.property.dto.PropertyRequest;
 import com.staysphere.property.dto.PropertyResponse;
+import com.staysphere.property.dto.PropertyStatusRequest;
 import com.staysphere.property.service.PropertyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -84,6 +85,39 @@ public class PropertyController {
                 ApiResponse.success("Search results fetched successfully",
                         propertyService.searchWithPostgres(
                                 query, city, guests, minPrice, maxPrice)));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('HOST')")
+    public ResponseEntity<ApiResponse<PropertyResponse>> updateProperty(
+            @PathVariable String id,
+            @RequestBody PropertyRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.success("Property updated successfully",
+                        propertyService.updateProperty(
+                                id, request, getCurrentUserId())));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('HOST')")
+    public ResponseEntity<ApiResponse<PropertyResponse>> updatePropertyStatus(
+            @PathVariable String id,
+            @RequestBody PropertyStatusRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.success("Property status updated successfully",
+                        propertyService.updatePropertyStatus(
+                                id, request.getStatus(), getCurrentUserId())));
+    }
+
+    @DeleteMapping("/{id}/images")
+    @PreAuthorize("hasRole('HOST')")
+    public ResponseEntity<ApiResponse<PropertyResponse>> deleteImage(
+            @PathVariable String id,
+            @RequestParam String url) {
+        return ResponseEntity.ok(
+                ApiResponse.success("Image removed successfully",
+                        propertyService.removePropertyImage(
+                                id, url, getCurrentUserId())));
     }
 
     @PostMapping("/{id}/images")
