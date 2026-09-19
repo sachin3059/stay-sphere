@@ -48,7 +48,8 @@ src/
 14. **Trip detail** — booking + payment receipt on `/bookings/:id`
 15. **Refunds** — cancel then refund (guest trip detail + host reservations)
 16. **Explore UX** — gallery, map, sort, pagination
-17. **Social auth** — Google + GitHub, profile page (current)
+17. **Social auth** — Google + GitHub, profile page
+18. **Admin** — users, listing moderation, health links (current)
 
 ### Booking flow (manual test)
 
@@ -121,4 +122,8 @@ Restart **property-service** after pulling backend changes (`PUT /api/properties
 
 Set `VITE_GOOGLE_CLIENT_ID` / `VITE_GITHUB_CLIENT_ID` and matching secrets in repo `.env` — see `docs/OAUTH.md`. Login/register show social buttons when configured.
 
-**Later steps:** admin ops (Phase 18), forgot password, date-range search on Explore (optional).
+### Step 18 (admin)
+
+Set `STAYSPHERE_BOOTSTRAP_ADMIN_EMAIL` in repo `.env`, restart auth-service, sign in again — see `docs/ADMIN.md`. Menu → **Admin**.
+
+**Later steps:** production deploy (Phase 19), forgot password, date-range search on Explore (optional).

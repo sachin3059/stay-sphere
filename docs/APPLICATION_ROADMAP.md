@@ -28,24 +28,13 @@ Use this as the **default order of work** (one slice at a time, commit when stab
 | A16 | **Refunds** | Policy docs, host/guest refund UI, webhook idempotency |
 | A17 | **Explore UX** | Photo gallery, map on detail, sort + client pagination |
 | A18 | **Social auth** | Google + GitHub OAuth, profile page, email linking |
+| A19 | **Admin & operations** | Admin APIs, bootstrap email, `/admin` UI, health links (`docs/ADMIN.md`) |
 
 ---
 
 ## Part B — Remaining work (build in this order)
 
-### Phase 18 — Admin & operations ← **current**
-
-**Goal:** Platform operator tools (optional for demo MVP).
-
-| # | Change | Layer | Notes |
-|---|--------|--------|--------|
-| 18.1 | ADMIN role assignment (not public register) | Backend | Already restricted; needs admin API |
-| 18.2 | Admin UI: users, listings moderation | Frontend | |
-| 18.3 | Actuator/health dashboard link for ops | Docs/ops | |
-
----
-
-### Phase 19 — Production deployment
+### Phase 19 — Production deployment ← **current**
 
 **Goal:** Runnable outside localhost.
 
@@ -99,18 +88,19 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 - [x] Event-driven booking confirm
 - [x] Token refresh in web client
 - [ ] Webhooks in deployed env
-- [ ] Admin / email / OAuth (later)
+- [x] Admin (users, listing moderation)
+- [ ] Email / deploy webhooks (Phase 19)
 
 ---
 
 ## How to use this doc
 
-1. Pick the **next open phase** in Part B (currently **Phase 18**).
+1. Pick the **next open phase** in Part B (currently **Phase 19**).
 2. Implement all rows in that phase (or agree to split a phase across two PRs).
 3. Update checkboxes in Part C when a capability ships.
 4. Keep `frontend/README.md` “Build order” in sync with the phase number for day-to-day dev.
 
-**Current focus:** **Phase 18 — Admin**, then **Phase 19 — Production deploy**.
+**Current focus:** **Phase 19 — Production deploy**.
 
 **Deferred from Phase 17:** forgot password / email verification (SendGrid); ChatGPT sign-in.
 

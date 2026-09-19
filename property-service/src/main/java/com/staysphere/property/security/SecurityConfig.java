@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/availability/*/ranges").permitAll()
                         .requestMatchers("/api/availability/*/check").permitAll()
                         .requestMatchers("/api/availability/*/blocked").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter,

@@ -95,6 +95,27 @@ public class PropertyService {
                 .collect(Collectors.toList());
     }
 
+    public List<PropertyResponse> listAllForAdmin() {
+        return propertyRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public PropertyResponse adminUpdatePropertyStatus(
+            String propertyId,
+            String status) {
+        if (status == null || status.isBlank()) {
+            throw new IllegalArgumentException("Status is required");
+        }
+        Property property = propertyRepository.findById(propertyId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Property not found"));
+        property.setStatus(Property.PropertyStatus.valueOf(
+                status.trim().toUpperCase()));
+        return mapToResponse(propertyRepository.save(property));
+    }
+
     public PropertyResponse updateProperty(
             String propertyId,
             PropertyRequest request,

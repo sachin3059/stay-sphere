@@ -1,3 +1,4 @@
+import { AdminOnlyRoute } from "@/components/auth/AdminOnlyRoute";
 import { AuthRequiredRoute } from "@/components/auth/AuthRequiredRoute";
 import { GuestOnlyRoute } from "@/components/auth/GuestOnlyRoute";
 import { HostOnlyRoute } from "@/components/auth/HostOnlyRoute";
@@ -19,6 +20,9 @@ import { HostListingsPage } from "@/pages/host/HostListingsPage";
 import { HostReservationsPage } from "@/pages/host/HostReservationsPage";
 import { NewListingPage } from "@/pages/host/NewListingPage";
 import { PropertyDetailPage } from "@/pages/PropertyDetailPage";
+import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
+import { AdminListingsPage } from "@/pages/admin/AdminListingsPage";
+import { AdminUsersPage } from "@/pages/admin/AdminUsersPage";
 import { GitHubOAuthCallbackPage } from "@/pages/GitHubOAuthCallbackPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { ProfilePage } from "@/pages/ProfilePage";
@@ -140,6 +144,30 @@ export const router = createBrowserRouter([
         ),
       },
       { path: "/how-it-works", element: <HowItWorksPage /> },
+      {
+        path: "/admin",
+        element: (
+          <AdminOnlyRoute>
+            <AdminDashboardPage />
+          </AdminOnlyRoute>
+        ),
+      },
+      {
+        path: "/admin/users",
+        element: (
+          <AdminOnlyRoute>
+            <AdminUsersPage />
+          </AdminOnlyRoute>
+        ),
+      },
+      {
+        path: "/admin/listings",
+        element: (
+          <AdminOnlyRoute>
+            <AdminListingsPage />
+          </AdminOnlyRoute>
+        ),
+      },
       {
         path: "/login",
         element: (

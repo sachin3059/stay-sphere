@@ -37,6 +37,7 @@ public class SecurityConfig {
                                 "/api/auth/oauth/google",
                                 "/api/auth/oauth/github"
                         ).permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/auth/become-host").authenticated()
                         .anyRequest().authenticated()
                 )
