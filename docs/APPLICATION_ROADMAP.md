@@ -26,27 +26,13 @@ Use this as the **default order of work** (one slice at a time, commit when stab
 | A14 | **Listing edits** | PUT property, edit page, unlist, remove photos, pricing rule update |
 | A15 | **Trip detail** | `/bookings/:id` with booking + payment receipt block |
 | A16 | **Refunds** | Policy docs, host/guest refund UI, webhook idempotency |
+| A17 | **Explore UX** | Photo gallery, map on detail, sort + client pagination |
 
 ---
 
 ## Part B — Remaining work (build in this order)
 
-### Phase 16 — Explore & discovery upgrades ← **current**
-
-**Goal:** Richer search and listing presentation.
-
-| # | Change | Layer | Notes |
-|---|--------|--------|--------|
-| 16.1 | Property image gallery on detail (all `imageUrls`) | Frontend | |
-| 16.2 | Map / coordinates on detail (lat/lng already on property) | Frontend | Optional map provider |
-| 16.3 | Date-range search on Explore | Backend + Frontend | If product requires; may extend search API |
-| 16.4 | Sort (price, newest) and pagination | Backend + Frontend | If result sets grow |
-
-**Acceptance:** Better browse experience without changing core book flow.
-
----
-
-### Phase 17 — Account & social auth (later enhancement)
+### Phase 17 — Account & social auth (later enhancement) ← **current**
 
 **Goal:** Faster signup and account linking (not required for MVP).
 
@@ -135,9 +121,20 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 
 ## How to use this doc
 
-1. Pick the **next open phase** in Part B (currently **Phase 16**).
+1. Pick the **next open phase** in Part B (currently **Phase 17**).
 2. Implement all rows in that phase (or agree to split a phase across two PRs).
 3. Update checkboxes in Part C when a capability ships.
 4. Keep `frontend/README.md` “Build order” in sync with the phase number for day-to-day dev.
 
-**Current focus:** **Phase 16 — Explore upgrades**, then **Phase 17 — OAuth**.
+**Current focus:** **Phase 17 — OAuth / account**, then **Phase 18 — Admin**.
+
+**Deferred (optional):** Explore date-range search (needs search API + availability); server-side sort/pagination when listings exceed client page size.
+
+---
+
+## Todo / backlog (not scheduled — pick when needed)
+
+| Item | Layer | Notes |
+|------|--------|--------|
+| **Host map pin + address autocomplete** | Frontend (+ env) | Save real `latitude` / `longitude` on create/edit listing. Options: **Google Places + Maps** (`GOOGLE_MAPS_API_KEY`), **Ola Maps** (developer.olamaps.io), or **OSS** (Leaflet + Photon/Nominatim, no key). Today create flow still uses default Pune coords; detail page only *displays* map if lat/lng exist. |
+| **Marketplace payouts** | Backend + Stripe Connect | Platform fee + pay host (deferred; single Stripe account for MVP). |

@@ -46,7 +46,8 @@ src/
 12. **Notifications** — inbox, header bell, poll/refetch
 13. **Edit listings** — host edit page, unlist, remove photos
 14. **Trip detail** — booking + payment receipt on `/bookings/:id`
-15. **Refunds** — cancel then refund (guest trip detail + host reservations) (current)
+15. **Refunds** — cancel then refund (guest trip detail + host reservations)
+16. **Explore UX** — gallery, map, sort, pagination (current)
 
 ### Booking flow (manual test)
 
@@ -110,4 +111,9 @@ Restart **property-service** after pulling backend changes (`PUT /api/properties
 - Cancel a **CONFIRMED** paid trip on **Trip details**, then **Issue refund** (guest) or use **Reservations** as host.
 - Policy: `docs/PAYMENT_REFUNDS.md`. Restart **payment-service** after backend auth changes.
 
-**Later steps:** explore gallery (Phase 16), OAuth (Google/GitHub).
+### Step 16 (explore UX)
+
+- **Property detail:** multi-photo gallery; **Location** map (OSM static image + Google Maps link) when lat/lng set.
+- **Explore:** sort (newest / price) and pagination (9 per page) on current search results.
+
+**Later steps:** OAuth (Phase 17), date-range search on Explore (optional).

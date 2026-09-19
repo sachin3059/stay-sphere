@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PropertyAvailabilityChecker } from "@/components/availability/PropertyAvailabilityChecker";
+import { PropertyImageGallery } from "@/components/properties/PropertyImageGallery";
+import { PropertyLocationMap } from "@/components/properties/PropertyLocationMap";
 import { fetchPropertyById } from "@/features/properties/api";
 import { formatInr, formatPropertyType } from "@/lib/format";
 import { ApiError } from "@/lib/api/types";
@@ -45,7 +47,13 @@ export function PropertyDetailPage() {
   }
 
   const property = data;
-  const hero = property.imageUrls?.[0];
+  const locationLabel = [
+    property.address,
+    property.city,
+    property.country,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
@@ -56,18 +64,12 @@ export function PropertyDetailPage() {
         ← All stays
       </Link>
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-brand-100 to-stone-200">
-        {hero ? (
-          <img
-            src={hero}
-            alt={property.title}
-            className="aspect-[16/9] w-full object-cover"
-          />
-        ) : (
-          <div className="flex aspect-[16/9] items-center justify-center text-brand-800/50">
-            {formatPropertyType(property.propertyType)}
-          </div>
-        )}
+      <div className="mt-6">
+        <PropertyImageGallery
+          title={property.title}
+          imageUrls={property.imageUrls}
+          propertyTypeLabel={formatPropertyType(property.propertyType)}
+        />
       </div>
 
       <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
@@ -154,6 +156,12 @@ export function PropertyDetailPage() {
           </ul>
         </section>
       )}
+
+      <PropertyLocationMap
+        latitude={property.latitude}
+        longitude={property.longitude}
+        label={locationLabel}
+      />
     </div>
   );
 }
