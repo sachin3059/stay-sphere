@@ -92,14 +92,21 @@ public class PaymentService {
     }
 
     @Transactional
-    public PaymentResponse refundPayment(String paymentId) {
+    public PaymentResponse refundPayment(String paymentId,
+                                         String callerId,
+                                         String authorizationHeader) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() ->
                         new PaymentException("Payment not found: " + paymentId));
 
+        if (payment.getStatus() == Payment.PaymentStatus.REFUNDED) {
+            throw new PaymentException("Payment is already refunded");
+        }
         if (payment.getStatus() != Payment.PaymentStatus.SUCCESS) {
             throw new PaymentException("Only successful payments can be refunded");
         }
+
+        assertRefundAllowed(payment, callerId, authorizationHeader);
 
         GatewayResult refund = paymentGateway.refund(payment);
         if (!refund.isSuccess()) {
@@ -123,5 +130,23 @@ public class PaymentService {
                 paymentRepository.findByBookingId(bookingId)
                         .orElseThrow(() ->
                                 new PaymentException("Payment not found for booking")));
+    }
+
+    private void assertRefundAllowed(Payment payment,
+                                     String callerId,
+                                     String authorizationHeader) {
+        if (!payment.getGuestId().equals(callerId)
+                && !payment.getHostId().equals(callerId)) {
+            throw new BadRequestException(
+                    "Only the guest or host for this payment may request a refund");
+        }
+
+        BookingPaymentClient.BookingSnapshot booking =
+                bookingPaymentClient.fetchBooking(
+                        payment.getBookingId(), authorizationHeader);
+        if (!"CANCELLED".equalsIgnoreCase(booking.status())) {
+            throw new PaymentException(
+                    "Refunds are only allowed after the booking is cancelled");
+        }
     }
 }

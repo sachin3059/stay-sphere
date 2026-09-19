@@ -1,3 +1,4 @@
+import { RefundPaymentButton } from "@/components/payments/RefundPaymentButton";
 import { Card } from "@/components/ui/Card";
 import {
   fetchHostReservations,
@@ -22,7 +23,13 @@ function statusColor(status: string) {
   }
 }
 
-function ReservationRow({ booking }: { booking: HostReservation }) {
+function ReservationRow({
+  booking,
+  accessToken,
+}: {
+  booking: HostReservation;
+  accessToken: string;
+}) {
   return (
     <Card className="p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -45,9 +52,16 @@ function ReservationRow({ booking }: { booking: HostReservation }) {
             View listing
           </Link>
         </div>
-        <p className="text-xs text-stone-400">
-          Guest ref: {booking.guestId.slice(0, 12)}…
-        </p>
+        <div className="flex flex-col items-end gap-2">
+          <p className="text-xs text-stone-400">
+            Guest ref: {booking.guestId.slice(0, 12)}…
+          </p>
+          <RefundPaymentButton
+            accessToken={accessToken}
+            bookingId={booking.id}
+            bookingStatus={booking.status}
+          />
+        </div>
       </div>
     </Card>
   );
@@ -88,7 +102,7 @@ export function HostReservationsPage() {
         <ul className="mt-8 space-y-4">
           {data.map((b) => (
             <li key={b.id}>
-              <ReservationRow booking={b} />
+              <ReservationRow booking={b} accessToken={accessToken} />
             </li>
           ))}
         </ul>

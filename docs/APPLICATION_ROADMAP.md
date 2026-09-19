@@ -25,26 +25,13 @@ Use this as the **default order of work** (one slice at a time, commit when stab
 | A13 | **Notifications** | Inbox, header bell, deep links to trips / waitlist / host reservations |
 | A14 | **Listing edits** | PUT property, edit page, unlist, remove photos, pricing rule update |
 | A15 | **Trip detail** | `/bookings/:id` with booking + payment receipt block |
+| A16 | **Refunds** | Policy docs, host/guest refund UI, webhook idempotency |
 
 ---
 
 ## Part B — Remaining work (build in this order)
 
-### Phase 15 — Refunds & host payment actions (policy-driven) ← **current**
-
-**Goal:** Support cancellation refunds where business rules allow.
-
-| # | Change | Layer | Notes |
-|---|--------|--------|--------|
-| 15.1 | Document who may call `POST /api/payments/{id}/refund` | Backend/docs | Guest vs host vs admin |
-| 15.2 | UI for eligible refunds (e.g. host on cancelled booking) | Frontend | After policy clear |
-| 15.3 | Stripe webhook hardening for prod | Backend/ops | `STRIPE_WEBHOOK_SECRET`, idempotent handlers |
-
-**Acceptance:** Refund path testable in Stripe test mode with clear roles.
-
----
-
-### Phase 16 — Explore & discovery upgrades
+### Phase 16 — Explore & discovery upgrades ← **current**
 
 **Goal:** Richer search and listing presentation.
 
@@ -132,7 +119,7 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 - [x] Edit / archive listing
 - [x] Remove photos
 - [x] Waitlist view per property (host calendar)
-- [ ] Refunds (if policy allows)
+- [x] Refunds (if policy allows)
 
 ### Platform
 
@@ -148,9 +135,9 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 
 ## How to use this doc
 
-1. Pick the **next open phase** in Part B (currently **Phase 15**).
+1. Pick the **next open phase** in Part B (currently **Phase 16**).
 2. Implement all rows in that phase (or agree to split a phase across two PRs).
 3. Update checkboxes in Part C when a capability ships.
 4. Keep `frontend/README.md` “Build order” in sync with the phase number for day-to-day dev.
 
-**Current focus:** **Phase 15 — Refunds**, then **Phase 16 — Explore upgrades**.
+**Current focus:** **Phase 16 — Explore upgrades**, then **Phase 17 — OAuth**.

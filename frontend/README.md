@@ -45,7 +45,8 @@ src/
 11. **Waitlist** — join when unavailable, my waitlist, host queue
 12. **Notifications** — inbox, header bell, poll/refetch
 13. **Edit listings** — host edit page, unlist, remove photos
-14. **Trip detail** — booking + payment receipt on `/bookings/:id` (current)
+14. **Trip detail** — booking + payment receipt on `/bookings/:id`
+15. **Refunds** — cancel then refund (guest trip detail + host reservations) (current)
 
 ### Booking flow (manual test)
 
@@ -104,4 +105,9 @@ Restart **property-service** after pulling backend changes (`PUT /api/properties
 - **Guest:** My trips → **Trip details** (`/bookings/:id`) — stay summary + payment status from `GET /api/payments/booking/{bookingId}`.
 - Pending trips: **Complete payment** / **Cancel** from the detail page.
 
-**Later steps:** refunds (Phase 15), OAuth (Google/GitHub).
+### Step 15 (refunds)
+
+- Cancel a **CONFIRMED** paid trip on **Trip details**, then **Issue refund** (guest) or use **Reservations** as host.
+- Policy: `docs/PAYMENT_REFUNDS.md`. Restart **payment-service** after backend auth changes.
+
+**Later steps:** explore gallery (Phase 16), OAuth (Google/GitHub).

@@ -135,6 +135,11 @@ public class StripeCheckoutService {
             log.warn("No payment found for PaymentIntent {}", intent.getId());
             return;
         }
+        if (payment.getStatus() == Payment.PaymentStatus.REFUNDED) {
+            log.info("Ignoring Stripe event {} for refunded payment {}",
+                    event.getType(), payment.getId());
+            return;
+        }
         if ("payment_intent.payment_failed".equals(event.getType())) {
             paymentLifecycleService.markFailed(
                     payment,

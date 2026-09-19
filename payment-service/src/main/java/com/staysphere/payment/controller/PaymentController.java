@@ -33,10 +33,12 @@ public class PaymentController {
 
     @PostMapping("/{id}/refund")
     public ResponseEntity<ApiResponse<PaymentResponse>> refundPayment(
-            @PathVariable String id) {
+            @PathVariable String id,
+            @RequestHeader("Authorization") String authorization) {
         return ResponseEntity.ok(
                 ApiResponse.success("Payment refunded successfully",
-                        paymentService.refundPayment(id)));
+                        paymentService.refundPayment(
+                                id, getCurrentUserId(), authorization)));
     }
 
     @GetMapping("/{id}")

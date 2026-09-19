@@ -18,7 +18,8 @@ public class PaymentLifecycleService {
 
     @Transactional
     public void markSuccess(Payment payment, String transactionId) {
-        if (payment.getStatus() == Payment.PaymentStatus.SUCCESS) {
+        if (payment.getStatus() == Payment.PaymentStatus.SUCCESS
+                || payment.getStatus() == Payment.PaymentStatus.REFUNDED) {
             return;
         }
         payment.setStatus(Payment.PaymentStatus.SUCCESS);
@@ -31,6 +32,9 @@ public class PaymentLifecycleService {
 
     @Transactional
     public void markRefunded(Payment payment) {
+        if (payment.getStatus() == Payment.PaymentStatus.REFUNDED) {
+            return;
+        }
         payment.setStatus(Payment.PaymentStatus.REFUNDED);
         payment.setProcessedAt(LocalDateTime.now());
         Payment saved = paymentRepository.save(payment);

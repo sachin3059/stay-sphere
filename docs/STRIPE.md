@@ -46,3 +46,7 @@ stripe listen --forward-to localhost:8080/api/payments/webhooks/stripe
 | POST | `/api/payments/webhooks/stripe` | Stripe signature |
 
 Legacy `POST /api/payments` only works when `PAYMENT_GATEWAY=simulate`.
+
+## Refunds
+
+See **`docs/PAYMENT_REFUNDS.md`** for who may call `POST /api/payments/{id}/refund` and the cancel-then-refund flow.

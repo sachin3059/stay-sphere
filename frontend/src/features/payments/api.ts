@@ -37,6 +37,13 @@ export async function fetchPayment(token: string, paymentId: string) {
 }
 
 /** Returns null when no payment record exists yet (e.g. pending checkout). */
+export async function refundPayment(token: string, paymentId: string) {
+  return apiData<PaymentRecord>(`/api/payments/${paymentId}/refund`, {
+    method: "POST",
+    token,
+  });
+}
+
 export async function fetchPaymentByBooking(
   token: string,
   bookingId: string,

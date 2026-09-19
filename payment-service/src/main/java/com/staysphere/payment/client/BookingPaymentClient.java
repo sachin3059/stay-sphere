@@ -34,6 +34,7 @@ public class BookingPaymentClient {
                 root.path("status").asText(),
                 new BigDecimal(root.path("totalPrice").asText("0")),
                 root.path("guestId").asText(),
+                root.path("hostId").asText(),
                 currency);
     }
 
@@ -41,5 +42,6 @@ public class BookingPaymentClient {
             String status,
             BigDecimal totalPrice,
             String guestId,
+            String hostId,
             String currency) {}
 }

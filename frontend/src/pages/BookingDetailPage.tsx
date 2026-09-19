@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { cancelBooking, fetchBooking } from "@/features/bookings/api";
 import { fetchPropertyById } from "@/features/properties/api";
+import { RefundPaymentButton } from "@/components/payments/RefundPaymentButton";
 import {
   createStripeIntent,
   fetchPaymentByBooking,
@@ -239,6 +240,20 @@ export function BookingDetailPage() {
             No payment on file yet. Complete checkout to pay for this trip.
           </p>
         )}
+        {booking.status === "CANCELLED" && payment?.status === "REFUNDED" && (
+          <p className="mt-4 text-sm text-green-800">
+            This payment has been refunded.
+          </p>
+        )}
+        <div className="mt-4">
+          <RefundPaymentButton
+            accessToken={accessToken}
+            bookingId={booking.id}
+            bookingStatus={booking.status}
+            payment={payment}
+            size="md"
+          />
+        </div>
       </Card>
 
       {actionError && (
@@ -250,20 +265,24 @@ export function BookingDetailPage() {
         </p>
       )}
 
-      {booking.status === "PENDING" && (
+      {(booking.status === "PENDING" || booking.status === "CONFIRMED") && (
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button
-            disabled={resumePay.isPending}
-            onClick={() => resumePay.mutate()}
-          >
-            {resumePay.isPending ? "Loading…" : "Complete payment"}
-          </Button>
+          {booking.status === "PENDING" && (
+            <Button
+              disabled={resumePay.isPending}
+              onClick={() => resumePay.mutate()}
+            >
+              {resumePay.isPending ? "Loading…" : "Complete payment"}
+            </Button>
+          )}
           <Button
             variant="outline"
             disabled={cancel.isPending}
             onClick={() => cancel.mutate()}
           >
-            Cancel booking
+            {booking.status === "CONFIRMED"
+              ? "Cancel trip"
+              : "Cancel booking"}
           </Button>
         </div>
       )}
