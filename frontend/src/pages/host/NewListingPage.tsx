@@ -1,7 +1,12 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import {
+  LocationPicker,
+  type LocationPickerValue,
+} from "@/components/maps/LocationPicker";
 import { PropertyPhotoPicker } from "@/components/properties/PropertyPhotoPicker";
+import { hasOlaMapsKey } from "@/features/maps/olaMaps";
 import {
   createPricingRule,
   createProperty,
@@ -40,6 +45,12 @@ export function NewListingPage() {
   const [propertyType, setPropertyType] = useState<PropertyType>("APARTMENT");
   const [amenities, setAmenities] = useState("WiFi, Kitchen");
   const [photos, setPhotos] = useState<File[]>([]);
+  const [location, setLocation] = useState<LocationPickerValue>({
+    latitude: 18.5362,
+    longitude: 73.8938,
+    city: "Pune",
+    country: "India",
+  });
 
   const submit = useMutation({
     mutationFn: async () => {
@@ -49,9 +60,9 @@ export function NewListingPage() {
         description: description.trim() || undefined,
         city: city.trim(),
         country: country.trim(),
-        address: address.trim() || undefined,
-        latitude: 18.5362,
-        longitude: 73.8938,
+        address: address.trim() || location.addressLine || undefined,
+        latitude: location.latitude,
+        longitude: location.longitude,
         pricePerNight: price,
         maxGuests: Number(maxGuests),
         bedrooms: Number(bedrooms),
@@ -87,6 +98,17 @@ export function NewListingPage() {
     setError(null);
     if (!title.trim() || !city.trim() || !pricePerNight) {
       setError("Title, city, and price are required.");
+      return;
+    }
+    if (!hasOlaMapsKey()) {
+      setError("Map API key is missing. Set VITE_OLA_MAPS_API_KEY in frontend/.env.");
+      return;
+    }
+    if (
+      !Number.isFinite(location.latitude) ||
+      !Number.isFinite(location.longitude)
+    ) {
+      setError("Pick a location on the map.");
       return;
     }
     submit.mutate();
@@ -146,6 +168,21 @@ export function NewListingPage() {
             label="Address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
+          />
+          <LocationPicker
+            value={{
+              ...location,
+              addressLine: address || location.addressLine,
+              city,
+              country,
+            }}
+            disabled={submit.isPending}
+            onChange={(loc) => {
+              setLocation(loc);
+              if (loc.addressLine) setAddress(loc.addressLine);
+              if (loc.city) setCity(loc.city);
+              if (loc.country) setCountry(loc.country);
+            }}
           />
           <div className="grid gap-4 sm:grid-cols-2">
             <Input

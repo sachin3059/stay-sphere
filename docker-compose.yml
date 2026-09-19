@@ -201,6 +201,7 @@ services:
       args:
         VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
         VITE_GITHUB_CLIENT_ID: ${VITE_GITHUB_CLIENT_ID:-}
+        VITE_OLA_MAPS_API_KEY: ${VITE_OLA_MAPS_API_KEY:-}
     container_name: staysphere-web
     ports:
       - "80:80"

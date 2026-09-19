@@ -112,5 +112,5 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 
 | Item | Layer | Notes |
 |------|--------|--------|
-| **Host map pin + address autocomplete** | Frontend (+ env) | Save real `latitude` / `longitude` on create/edit listing. Options: **Google Places + Maps** (`GOOGLE_MAPS_API_KEY`), **Ola Maps** (developer.olamaps.io), or **OSS** (Leaflet + Photon/Nominatim, no key). Today create flow still uses default Pune coords; detail page only *displays* map if lat/lng exist. |
+| **Host map pin (enhancements)** | Frontend | Ola + Leaflet shipped (`docs/MAPS.md`). Optional: Explore map view, Google/OSS fallback provider. |
 | **Marketplace payouts** | Backend + Stripe Connect | Platform fee + pay host (deferred; single Stripe account for MVP). |

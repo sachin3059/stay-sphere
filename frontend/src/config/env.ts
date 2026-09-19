@@ -18,4 +18,5 @@ export const env = {
   appName: "StaySphere",
   googleClientId: optionalEnv(import.meta.env.VITE_GOOGLE_CLIENT_ID),
   githubClientId: optionalEnv(import.meta.env.VITE_GITHUB_CLIENT_ID),
+  olaMapsApiKey: optionalEnv(import.meta.env.VITE_OLA_MAPS_API_KEY),
 } as const;
