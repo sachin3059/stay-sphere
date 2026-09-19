@@ -20,25 +20,13 @@ Use this as the **default order of work** (one slice at a time, commit when stab
 | A8 | **Photos** | Cloudinary upload on create + manage photos per listing |
 | A9 | **Session reliability** | 401 → refresh + retry, proactive refresh, session-expired login message |
 | A10 | **Availability** | Check before book, detail date checker, host block calendar |
+| A11 | **Pricing transparency** | Server quote on book + property date checker |
 
 ---
 
 ## Part B — Remaining work (build in this order)
 
-### Phase 10 — Pricing transparency (guest) ← **current**
-
-**Goal:** Guest sees server price before paying.
-
-| # | Change | Layer | Notes |
-|---|--------|--------|--------|
-| 10.1 | `POST /api/pricing/calculate` on book page when dates change | Frontend | Show nightly + total |
-| 10.2 | Align displayed total with booking `totalPrice` after create | Frontend | Same numbers as backend |
-
-**Acceptance:** Book page total matches My trips / payment amount.
-
----
-
-### Phase 11 — Waitlist (guest + host)
+### Phase 11 — Waitlist (guest + host) ← **current**
 
 **Goal:** When dates are unavailable, guest can join a queue.
 
@@ -214,9 +202,9 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 
 ## How to use this doc
 
-1. Pick the **next open phase** in Part B (currently **Phase 10**).
+1. Pick the **next open phase** in Part B (currently **Phase 11**).
 2. Implement all rows in that phase (or agree to split a phase across two PRs).
 3. Update checkboxes in Part C when a capability ships.
 4. Keep `frontend/README.md` “Build order” in sync with the phase number for day-to-day dev.
 
-**Current focus:** **Phase 10 — Pricing transparency**, then **Phase 11 — Waitlist**.
+**Current focus:** **Phase 11 — Waitlist**, then **Phase 12 — Notifications**.

@@ -4,7 +4,9 @@ import { Input } from "@/components/ui/Input";
 import { AvailabilityStatusBanner } from "@/components/availability/AvailabilityStatusBanner";
 import { checkAvailability } from "@/features/availability/api";
 import { createBooking } from "@/features/bookings/api";
+import { calculateStayPrice } from "@/features/pricing/api";
 import { createStripeIntent } from "@/features/payments/api";
+import { BookingPriceSummary } from "@/components/pricing/BookingPriceSummary";
 import { fetchPropertyById } from "@/features/properties/api";
 import { formatInr } from "@/lib/format";
 import { ApiError } from "@/lib/api/types";
@@ -42,6 +44,17 @@ export function BookPropertyPage() {
     queryKey: ["availability-check", propertyId, checkIn, checkOut],
     queryFn: () => checkAvailability(propertyId!, checkIn, checkOut),
     enabled: Boolean(propertyId && canCheck),
+  });
+
+  const {
+    data: priceQuote,
+    isFetching: loadingPrice,
+    error: priceError,
+  } = useQuery({
+    queryKey: ["price-quote", propertyId, checkIn, checkOut],
+    queryFn: () => calculateStayPrice(propertyId!, checkIn, checkOut),
+    enabled: Boolean(propertyId && canCheck),
+    retry: false,
   });
 
   const bookAndPay = useMutation({
@@ -140,6 +153,13 @@ export function BookPropertyPage() {
             checking={checkingAvailability}
             result={availability}
           />
+          {canCheck && (
+            <BookingPriceSummary
+              loading={loadingPrice}
+              quote={priceQuote}
+              error={priceError}
+            />
+          )}
           <Input
             label="Guests"
             type="number"
@@ -159,7 +179,9 @@ export function BookPropertyPage() {
             className="w-full"
             disabled={
               bookAndPay.isPending ||
-              (canCheck && availability !== undefined && !availability.available)
+              (canCheck && availability !== undefined && !availability.available) ||
+              (canCheck && loadingPrice) ||
+              (canCheck && Boolean(priceError))
             }
           >
             {bookAndPay.isPending

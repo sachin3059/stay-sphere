@@ -1,6 +1,8 @@
 import { AvailabilityStatusBanner } from "@/components/availability/AvailabilityStatusBanner";
 import { Input } from "@/components/ui/Input";
 import { checkAvailability } from "@/features/availability/api";
+import { calculateStayPrice } from "@/features/pricing/api";
+import { formatInr } from "@/lib/format";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -23,6 +25,13 @@ export function PropertyAvailabilityChecker({ propertyId, signedIn }: Props) {
     queryKey: ["availability-check", propertyId, checkIn, checkOut],
     queryFn: () => checkAvailability(propertyId, checkIn, checkOut),
     enabled: canCheck,
+  });
+
+  const { data: priceQuote, isFetching: loadingPrice } = useQuery({
+    queryKey: ["price-quote", propertyId, checkIn, checkOut],
+    queryFn: () => calculateStayPrice(propertyId, checkIn, checkOut),
+    enabled: canCheck,
+    retry: false,
   });
 
   const bookHref = useMemo(() => {
@@ -51,6 +60,14 @@ export function PropertyAvailabilityChecker({ propertyId, signedIn }: Props) {
         checking={isFetching}
         result={data}
       />
+      {canCheck && data?.available && priceQuote && !loadingPrice && (
+        <p className="text-sm font-medium text-ink">
+          Estimated total: {formatInr(priceQuote.totalPrice)}{" "}
+          <span className="font-normal text-muted">
+            ({priceQuote.totalNights} nights)
+          </span>
+        </p>
+      )}
       {signedIn && data?.available && canCheck && (
         <Link to={bookHref}>
           <Button className="w-full" size="sm">
