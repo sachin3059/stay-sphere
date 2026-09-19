@@ -23,6 +23,20 @@ export async function becomeHostRequest(accessToken: string) {
   });
 }
 
+export async function googleOAuthRequest(idToken: string) {
+  return apiData<AuthResponseData>("/api/auth/oauth/google", {
+    method: "POST",
+    body: { idToken },
+  });
+}
+
+export async function githubOAuthRequest(code: string) {
+  return apiData<AuthResponseData>("/api/auth/oauth/github", {
+    method: "POST",
+    body: { code },
+  });
+}
+
 export async function logoutRequest(refreshToken: string) {
   await apiRequest<ApiResponse<string>>("/api/auth/logout", {
     method: "POST",

@@ -1,6 +1,8 @@
 package com.staysphere.auth.controller;
 
 import com.staysphere.auth.dto.AuthResponse;
+import com.staysphere.auth.dto.GitHubOAuthRequest;
+import com.staysphere.auth.dto.GoogleOAuthRequest;
 import com.staysphere.auth.dto.LoginRequest;
 import com.staysphere.auth.dto.RefreshTokenRequest;
 import com.staysphere.auth.dto.RegisterRequest;
@@ -38,6 +40,22 @@ public class AuthController {
         return ResponseEntity.ok(
                 ApiResponse.success("Login successful",
                         authService.login(request)));
+    }
+
+    @PostMapping("/oauth/google")
+    public ResponseEntity<ApiResponse<AuthResponse>> googleOAuth(
+            @RequestBody GoogleOAuthRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.success("Signed in with Google",
+                        authService.loginWithGoogle(request.getIdToken())));
+    }
+
+    @PostMapping("/oauth/github")
+    public ResponseEntity<ApiResponse<AuthResponse>> githubOAuth(
+            @RequestBody GitHubOAuthRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.success("Signed in with GitHub",
+                        authService.loginWithGitHub(request.getCode())));
     }
 
     @PostMapping("/refresh")

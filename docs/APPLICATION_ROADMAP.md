@@ -27,29 +27,13 @@ Use this as the **default order of work** (one slice at a time, commit when stab
 | A15 | **Trip detail** | `/bookings/:id` with booking + payment receipt block |
 | A16 | **Refunds** | Policy docs, host/guest refund UI, webhook idempotency |
 | A17 | **Explore UX** | Photo gallery, map on detail, sort + client pagination |
+| A18 | **Social auth** | Google + GitHub OAuth, profile page, email linking |
 
 ---
 
 ## Part B — Remaining work (build in this order)
 
-### Phase 17 — Account & social auth (later enhancement) ← **current**
-
-**Goal:** Faster signup and account linking (not required for MVP).
-
-| # | Change | Layer | Notes |
-|---|--------|--------|--------|
-| 17.1 | OAuth2/OIDC — Google | Backend + Frontend | Spring OAuth2 client, callback URLs |
-| 17.2 | OAuth2 — GitHub | Backend + Frontend | Same pattern |
-| 17.3 | Link OAuth identity to existing email account | Backend | Conflict rules |
-| 17.4 | Sign in with ChatGPT | Partner only | Only if OpenAI approves app |
-| 17.5 | Profile page (name, email read-only) | Frontend | Extend when profile APIs exist |
-| 17.6 | Forgot password / email verification | Backend + Frontend | SendGrid |
-
-**Acceptance:** “Continue with Google” issues same JWT contract as email login.
-
----
-
-### Phase 18 — Admin & operations
+### Phase 18 — Admin & operations ← **current**
 
 **Goal:** Platform operator tools (optional for demo MVP).
 
@@ -93,7 +77,7 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 - [x] Waitlist when unavailable
 - [x] Notifications
 - [x] Trip/payment receipt detail
-- [ ] Social login (later)
+- [x] Social login (Google & GitHub)
 
 ### Host
 
@@ -121,12 +105,14 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 
 ## How to use this doc
 
-1. Pick the **next open phase** in Part B (currently **Phase 17**).
+1. Pick the **next open phase** in Part B (currently **Phase 18**).
 2. Implement all rows in that phase (or agree to split a phase across two PRs).
 3. Update checkboxes in Part C when a capability ships.
 4. Keep `frontend/README.md` “Build order” in sync with the phase number for day-to-day dev.
 
-**Current focus:** **Phase 17 — OAuth / account**, then **Phase 18 — Admin**.
+**Current focus:** **Phase 18 — Admin**, then **Phase 19 — Production deploy**.
+
+**Deferred from Phase 17:** forgot password / email verification (SendGrid); ChatGPT sign-in.
 
 **Deferred (optional):** Explore date-range search (needs search API + availability); server-side sort/pagination when listings exceed client page size.
 

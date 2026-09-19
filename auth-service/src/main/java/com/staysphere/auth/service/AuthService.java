@@ -6,6 +6,8 @@ import com.staysphere.auth.dto.RegisterRequest;
 import com.staysphere.auth.entity.RefreshToken;
 import com.staysphere.auth.entity.User;
 import com.staysphere.auth.repository.UserRepository;
+import com.staysphere.auth.service.GitHubOAuthService.VerifiedGitHubUser;
+import com.staysphere.auth.service.GoogleOAuthService.VerifiedGoogleUser;
 import com.staysphere.common.exception.BadRequestException;
 import com.staysphere.common.exception.ConflictException;
 import com.staysphere.common.security.JwtUtil;
@@ -24,6 +26,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
+    private final GoogleOAuthService googleOAuthService;
+    private final GitHubOAuthService gitHubOAuthService;
 
     private static final long ACCESS_TOKEN_EXPIRY = 900000;
     private static final long REFRESH_TOKEN_EXPIRY = 604800000;
@@ -70,12 +74,28 @@ public class AuthService {
                 .orElseThrow(() ->
                         new BadRequestException("Invalid credentials"));
 
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            throw new BadRequestException(
+                    "This account uses social sign-in. Continue with Google or GitHub.");
+        }
         if (!passwordEncoder.matches(request.getPassword(),
                 user.getPassword())) {
             throw new BadRequestException("Invalid credentials");
         }
 
         return issueTokens(user);
+    }
+
+    @Transactional
+    public AuthResponse loginWithGoogle(String idToken) {
+        VerifiedGoogleUser verified = googleOAuthService.verifyIdToken(idToken);
+        return issueTokens(resolveGoogleUser(verified));
+    }
+
+    @Transactional
+    public AuthResponse loginWithGitHub(String code) {
+        VerifiedGitHubUser verified = gitHubOAuthService.exchangeCode(code);
+        return issueTokens(resolveGitHubUser(verified));
     }
 
     @Transactional
@@ -118,6 +138,59 @@ public class AuthService {
         User saved = userRepository.save(user);
         log.info("User {} upgraded to HOST", saved.getEmail());
         return issueTokens(saved);
+    }
+
+    private User resolveGoogleUser(VerifiedGoogleUser verified) {
+        return userRepository.findByGoogleSub(verified.sub())
+                .orElseGet(() -> linkOrCreateOAuthUser(
+                        verified.email(),
+                        verified.fullName(),
+                        verified.sub(),
+                        null));
+    }
+
+    private User resolveGitHubUser(VerifiedGitHubUser verified) {
+        return userRepository.findByGithubId(verified.githubId())
+                .orElseGet(() -> linkOrCreateOAuthUser(
+                        verified.email(),
+                        verified.fullName(),
+                        null,
+                        verified.githubId()));
+    }
+
+    private User linkOrCreateOAuthUser(
+            String email,
+            String fullName,
+            String googleSub,
+            String githubId) {
+        return userRepository.findByEmail(email).map(existing -> {
+            if (googleSub != null) {
+                if (existing.getGoogleSub() != null
+                        && !existing.getGoogleSub().equals(googleSub)) {
+                    throw new ConflictException(
+                            "Email already linked to another Google account");
+                }
+                existing.setGoogleSub(googleSub);
+            }
+            if (githubId != null) {
+                if (existing.getGithubId() != null
+                        && !existing.getGithubId().equals(githubId)) {
+                    throw new ConflictException(
+                            "Email already linked to another GitHub account");
+                }
+                existing.setGithubId(githubId);
+            }
+            if (existing.getFullName() == null || existing.getFullName().isBlank()) {
+                existing.setFullName(fullName);
+            }
+            return userRepository.save(existing);
+        }).orElseGet(() -> userRepository.save(User.builder()
+                .email(email)
+                .fullName(fullName)
+                .role(User.Role.GUEST)
+                .googleSub(googleSub)
+                .githubId(githubId)
+                .build()));
     }
 
     private AuthResponse issueTokens(User user) {

@@ -33,7 +33,9 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/refresh",
                                 "/api/auth/logout",
-                                "/api/auth/health"
+                                "/api/auth/health",
+                                "/api/auth/oauth/google",
+                                "/api/auth/oauth/github"
                         ).permitAll()
                         .requestMatchers("/api/auth/become-host").authenticated()
                         .anyRequest().authenticated()

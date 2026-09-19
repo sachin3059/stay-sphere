@@ -18,8 +18,14 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    /** Null for OAuth-only accounts. */
     private String password;
+
+    @Column(name = "google_sub")
+    private String googleSub;
+
+    @Column(name = "github_id")
+    private String githubId;
 
     @Column(nullable = false)
     private String fullName;

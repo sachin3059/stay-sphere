@@ -1,4 +1,5 @@
 import { AuthShell } from "@/components/auth/AuthShell";
+import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { loginRequest } from "@/features/auth/api";
@@ -93,6 +94,7 @@ export function LoginPage() {
           {login.isPending ? "Signing in…" : "Sign in"}
         </Button>
       </form>
+      <SocialAuthButtons redirectTo={redirectTo} />
     </AuthShell>
   );
 }

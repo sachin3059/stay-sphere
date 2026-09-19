@@ -19,7 +19,9 @@ import { HostListingsPage } from "@/pages/host/HostListingsPage";
 import { HostReservationsPage } from "@/pages/host/HostReservationsPage";
 import { NewListingPage } from "@/pages/host/NewListingPage";
 import { PropertyDetailPage } from "@/pages/PropertyDetailPage";
+import { GitHubOAuthCallbackPage } from "@/pages/GitHubOAuthCallbackPage";
 import { LoginPage } from "@/pages/LoginPage";
+import { ProfilePage } from "@/pages/ProfilePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { createBrowserRouter } from "react-router-dom";
@@ -63,6 +65,15 @@ export const router = createBrowserRouter([
           </AuthRequiredRoute>
         ),
       },
+      {
+        path: "/profile",
+        element: (
+          <AuthRequiredRoute>
+            <ProfilePage />
+          </AuthRequiredRoute>
+        ),
+      },
+      { path: "/auth/github/callback", element: <GitHubOAuthCallbackPage /> },
       {
         path: "/bookings/:bookingId",
         element: (

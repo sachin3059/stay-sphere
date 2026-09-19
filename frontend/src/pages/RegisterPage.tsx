@@ -1,4 +1,5 @@
 import { AuthShell } from "@/components/auth/AuthShell";
+import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { registerRequest } from "@/features/auth/api";
@@ -97,6 +98,7 @@ export function RegisterPage() {
           {register.isPending ? "Creating account…" : "Create account"}
         </Button>
       </form>
+      <SocialAuthButtons redirectTo="/" />
     </AuthShell>
   );
 }

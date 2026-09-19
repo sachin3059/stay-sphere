@@ -47,7 +47,8 @@ src/
 13. **Edit listings** — host edit page, unlist, remove photos
 14. **Trip detail** — booking + payment receipt on `/bookings/:id`
 15. **Refunds** — cancel then refund (guest trip detail + host reservations)
-16. **Explore UX** — gallery, map, sort, pagination (current)
+16. **Explore UX** — gallery, map, sort, pagination
+17. **Social auth** — Google + GitHub, profile page (current)
 
 ### Booking flow (manual test)
 
@@ -116,4 +117,8 @@ Restart **property-service** after pulling backend changes (`PUT /api/properties
 - **Property detail:** multi-photo gallery; **Location** map (OSM static image + Google Maps link) when lat/lng set.
 - **Explore:** sort (newest / price) and pagination (9 per page) on current search results.
 
-**Later steps:** OAuth (Phase 17), date-range search on Explore (optional).
+### Step 17 (social auth)
+
+Set `VITE_GOOGLE_CLIENT_ID` / `VITE_GITHUB_CLIENT_ID` and matching secrets in repo `.env` — see `docs/OAUTH.md`. Login/register show social buttons when configured.
+
+**Later steps:** admin ops (Phase 18), forgot password, date-range search on Explore (optional).
