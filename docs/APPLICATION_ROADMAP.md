@@ -19,28 +19,13 @@ Use this as the **default order of work** (one slice at a time, commit when stab
 | A7 | **Host ops** | Reservations dashboard, resume payment on pending trips |
 | A8 | **Photos** | Cloudinary upload on create + manage photos per listing |
 | A9 | **Session reliability** | 401 → refresh + retry, proactive refresh, session-expired login message |
+| A10 | **Availability** | Check before book, detail date checker, host block calendar |
 
 ---
 
 ## Part B — Remaining work (build in this order)
 
-### Phase 9 — Availability-aware booking (guest + host) ← **current**
-
-**Goal:** Dates reflect real availability; hosts can block nights.
-
-| # | Change | Layer | Notes |
-|---|--------|--------|--------|
-| 9.1 | `GET /api/availability/{propertyId}/check` before create booking | Frontend | Book form validation + error copy |
-| 9.2 | Show availability hint on property detail (optional date pickers) | Frontend | Read-only check or mini calendar |
-| 9.3 | `GET /api/availability/{propertyId}/ranges` or blocked list for UI | Frontend | Disable bad dates in date inputs |
-| 9.4 | Host page: block dates — `POST /api/availability/block` | Frontend | Per listing |
-| 9.5 | Host page: view blocked — `GET /api/availability/{propertyId}/blocked` | Frontend | Calendar or list |
-
-**Acceptance:** Cannot book blocked dates; host blocks show for guests.
-
----
-
-### Phase 10 — Pricing transparency (guest)
+### Phase 10 — Pricing transparency (guest) ← **current**
 
 **Goal:** Guest sees server price before paying.
 
@@ -209,7 +194,7 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 - [x] Create listing + pricing
 - [x] Upload photos (Cloudinary)
 - [x] View reservations across listings
-- [ ] Block calendar dates
+- [x] Block calendar dates (host); availability check on book
 - [ ] Edit / archive listing
 - [ ] Remove photos
 - [ ] Waitlist view per property
@@ -229,9 +214,9 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 
 ## How to use this doc
 
-1. Pick the **next open phase** in Part B (currently **Phase 9**).
+1. Pick the **next open phase** in Part B (currently **Phase 10**).
 2. Implement all rows in that phase (or agree to split a phase across two PRs).
 3. Update checkboxes in Part C when a capability ships.
 4. Keep `frontend/README.md` “Build order” in sync with the phase number for day-to-day dev.
 
-**Current focus:** **Phase 9 — Availability**, then **Phase 10 — Pricing transparency**.
+**Current focus:** **Phase 10 — Pricing transparency**, then **Phase 11 — Waitlist**.

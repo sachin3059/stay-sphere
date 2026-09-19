@@ -45,12 +45,20 @@ export function HostListingsPage() {
           {data.map((p) => (
             <li key={p.id} className="flex flex-col gap-2">
               <PropertyCard property={p} />
-              <Link
-                to={`/host/listings/${p.id}/photos`}
-                className="text-center text-sm font-medium text-brand-700 hover:underline"
-              >
-                {p.imageUrls?.length ? "Manage photos" : "Add photos"}
-              </Link>
+              <div className="flex justify-center gap-4 text-sm font-medium">
+                <Link
+                  to={`/host/listings/${p.id}/photos`}
+                  className="text-brand-700 hover:underline"
+                >
+                  {p.imageUrls?.length ? "Photos" : "Add photos"}
+                </Link>
+                <Link
+                  to={`/host/listings/${p.id}/availability`}
+                  className="text-brand-700 hover:underline"
+                >
+                  Calendar
+                </Link>
+              </div>
             </li>
           ))}
         </ul>

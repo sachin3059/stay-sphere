@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { PropertyAvailabilityChecker } from "@/components/availability/PropertyAvailabilityChecker";
 import { fetchPropertyById } from "@/features/properties/api";
 import { formatInr, formatPropertyType } from "@/lib/format";
 import { ApiError } from "@/lib/api/types";
@@ -106,6 +107,10 @@ export function PropertyDetailPage() {
           <p className="mt-2 text-center text-xs text-stone-400">
             Secure checkout with Stripe
           </p>
+          <PropertyAvailabilityChecker
+            propertyId={property.id}
+            signedIn={Boolean(accessToken)}
+          />
         </Card>
       </div>
 

@@ -9,6 +9,7 @@ import { ExplorePage } from "@/pages/ExplorePage";
 import { MyBookingsPage } from "@/pages/MyBookingsPage";
 import { HomePage } from "@/pages/HomePage";
 import { HowItWorksPage } from "@/pages/HowItWorksPage";
+import { HostListingAvailabilityPage } from "@/pages/host/HostListingAvailabilityPage";
 import { HostListingPhotosPage } from "@/pages/host/HostListingPhotosPage";
 import { HostListingsPage } from "@/pages/host/HostListingsPage";
 import { HostReservationsPage } from "@/pages/host/HostReservationsPage";
@@ -80,6 +81,14 @@ export const router = createBrowserRouter([
         element: (
           <HostOnlyRoute>
             <HostListingPhotosPage />
+          </HostOnlyRoute>
+        ),
+      },
+      {
+        path: "/host/listings/:id/availability",
+        element: (
+          <HostOnlyRoute>
+            <HostListingAvailabilityPage />
           </HostOnlyRoute>
         ),
       },

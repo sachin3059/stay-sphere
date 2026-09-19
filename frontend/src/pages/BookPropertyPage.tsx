@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { AvailabilityStatusBanner } from "@/components/availability/AvailabilityStatusBanner";
+import { checkAvailability } from "@/features/availability/api";
 import { createBooking } from "@/features/bookings/api";
 import { createStripeIntent } from "@/features/payments/api";
 import { fetchPropertyById } from "@/features/properties/api";
@@ -9,10 +11,11 @@ import { ApiError } from "@/lib/api/types";
 import { useAuthStore } from "@/store/authStore";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 export function BookPropertyPage() {
   const { id: propertyId } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const accessToken = useAuthStore((s) => s.accessToken)!;
 
@@ -22,13 +25,31 @@ export function BookPropertyPage() {
     enabled: Boolean(propertyId),
   });
 
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
+  const [checkIn, setCheckIn] = useState(
+    () => searchParams.get("checkIn") ?? "",
+  );
+  const [checkOut, setCheckOut] = useState(
+    () => searchParams.get("checkOut") ?? "",
+  );
   const [totalGuests, setTotalGuests] = useState("2");
   const [error, setError] = useState<string | null>(null);
 
+  const canCheck = Boolean(
+    checkIn && checkOut && checkOut > checkIn,
+  );
+
+  const { data: availability, isFetching: checkingAvailability } = useQuery({
+    queryKey: ["availability-check", propertyId, checkIn, checkOut],
+    queryFn: () => checkAvailability(propertyId!, checkIn, checkOut),
+    enabled: Boolean(propertyId && canCheck),
+  });
+
   const bookAndPay = useMutation({
     mutationFn: async () => {
+      const check = await checkAvailability(propertyId!, checkIn, checkOut);
+      if (!check.available) {
+        throw new ApiError(check.message, 409);
+      }
       const idempotencyKey = crypto.randomUUID();
       const booking = await createBooking(
         accessToken,
@@ -66,6 +87,10 @@ export function BookPropertyPage() {
     setError(null);
     if (!checkIn || !checkOut || checkIn >= checkOut) {
       setError("Choose valid check-in and check-out dates.");
+      return;
+    }
+    if (availability && !availability.available) {
+      setError(availability.message);
       return;
     }
     bookAndPay.mutate();
@@ -110,6 +135,11 @@ export function BookPropertyPage() {
             onChange={(e) => setCheckOut(e.target.value)}
             required
           />
+          <AvailabilityStatusBanner
+            canCheck={canCheck}
+            checking={checkingAvailability}
+            result={availability}
+          />
           <Input
             label="Guests"
             type="number"
@@ -127,7 +157,10 @@ export function BookPropertyPage() {
           <Button
             type="submit"
             className="w-full"
-            disabled={bookAndPay.isPending}
+            disabled={
+              bookAndPay.isPending ||
+              (canCheck && availability !== undefined && !availability.available)
+            }
           >
             {bookAndPay.isPending
               ? "Reserving…"

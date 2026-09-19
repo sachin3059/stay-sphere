@@ -39,7 +39,8 @@ src/
 5. **Booking & Stripe** — book, pay, my trips
 6. **Host ops & guest polish** — host reservations, resume pending payment
 7. **Listing photos** — Cloudinary upload on create + manage photos
-8. **Session** — refresh on 401 + proactive token refresh (current)
+8. **Session** — refresh on 401 + proactive token refresh
+9. **Availability** — check dates, host calendar blocks (current)
 
 ### Booking flow (manual test)
 
@@ -66,4 +67,9 @@ Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` in re
 
 Access tokens expire; the app calls `POST /api/auth/refresh` on **401**, retries once, and refreshes proactively within 2 minutes of JWT `exp`. Failed refresh redirects to `/login?session=expired`.
 
-**Later steps:** availability on book, waitlist UI, OAuth (Google/GitHub).
+### Step 9 (availability)
+
+- **Guest:** Property detail → **Check dates**; book page shows live availability and blocks checkout when unavailable.
+- **Host:** My listings → **Calendar** (`/host/listings/:id/availability`) — block dates; list shows booked/blocked periods.
+
+**Later steps:** pricing preview on book, waitlist UI, OAuth (Google/GitHub).
