@@ -1,13 +1,12 @@
+import { env } from "@/config/env";
 import {
   isAuthRefreshExemptPath,
   refreshAccessToken,
 } from "@/lib/auth/refreshSession";
 import { ApiError, type ApiErrorBody, type ApiResponse } from "./types";
 
-const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
-
 export function getApiBaseUrl(): string {
-  return baseUrl.replace(/\/$/, "");
+  return env.apiUrl;
 }
 
 type RequestOptions = {

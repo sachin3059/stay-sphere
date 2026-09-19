@@ -49,7 +49,8 @@ src/
 15. **Refunds** — cancel then refund (guest trip detail + host reservations)
 16. **Explore UX** — gallery, map, sort, pagination
 17. **Social auth** — Google + GitHub, profile page
-18. **Admin** — users, listing moderation, health links (current)
+18. **Admin** — users, listing moderation, health links
+19. **Production** — Docker `web` on :80, CI frontend build, `docs/DEPLOYMENT.md` (current)
 
 ### Booking flow (manual test)
 
@@ -126,4 +127,8 @@ Set `VITE_GOOGLE_CLIENT_ID` / `VITE_GITHUB_CLIENT_ID` and matching secrets in re
 
 Set `STAYSPHERE_BOOTSTRAP_ADMIN_EMAIL` in repo `.env`, restart auth-service, sign in again — see `docs/ADMIN.md`. Menu → **Admin**.
 
-**Later steps:** production deploy (Phase 19), forgot password, date-range search on Explore (optional).
+### Step 19 (production)
+
+`docker compose up -d --build` → app on **http://localhost** (nginx + `/api` proxy). See `docs/DEPLOYMENT.md`.
+
+**Later steps:** forgot password, rate limiting, date-range search on Explore (optional).

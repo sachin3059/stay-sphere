@@ -33,6 +33,6 @@ jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}
 sendgrid:
-  api-key: ${SENDGRID_API_KEY}
-  from-email: ${SENDGRID_FROM_EMAIL}
+  api-key: ${SENDGRID_API_KEY:}
+  from-email: ${SENDGRID_FROM_EMAIL:noreply@example.com}
   from-name: ${SENDGRID_FROM_NAME:StaySphere}

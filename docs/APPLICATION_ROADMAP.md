@@ -36,18 +36,18 @@ Use this as the **default order of work** (one slice at a time, commit when stab
 
 ### Phase 19 — Production deployment ← **current**
 
-**Goal:** Runnable outside localhost.
+**Goal:** Runnable outside localhost. Guide: **`docs/DEPLOYMENT.md`**.
 
-| # | Change | Layer | Notes |
+| # | Change | Layer | Status |
 |---|--------|--------|--------|
-| 19.1 | Frontend production build + hosting | Ops | `npm run build`, CDN or static behind gateway |
-| 19.2 | Env matrix: gateway CORS, JWT, Stripe, Cloudinary | Ops | Secrets not in git |
-| 19.3 | Stripe webhooks on public URL | Ops | |
-| 19.4 | CI: backend tests + frontend build | CI | Extend existing pipeline |
-| 19.5 | Rate limiting / API versioning | Backend | Per IMPROVEMENT_PLAN optional items |
-| 19.6 | Real email (SendGrid) for transactional mail | Backend | |
+| 19.1 | Frontend production build + hosting | Ops | Docker `web` (nginx + SPA), `frontend/Dockerfile` |
+| 19.2 | Env matrix: gateway CORS, JWT, Stripe, Cloudinary | Ops | `env.template`, `DEPLOYMENT.md` |
+| 19.3 | Stripe webhooks on public URL | Ops | Documented; configure on your host |
+| 19.4 | CI: backend tests + frontend build | CI | `.github/workflows/ci.yml` |
+| 19.5 | Rate limiting / API versioning | Backend | Optional backlog |
+| 19.6 | Real email (SendGrid) | Backend | Wired; skips send when key unset |
 
-**Acceptance:** Staging URL completes register → book → pay → confirm.
+**Acceptance:** Staging URL completes register → book → pay → confirm (you run deploy + Stripe webhook on your domain).
 
 ---
 
@@ -87,7 +87,7 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 - [x] Payment intents + confirm sync
 - [x] Event-driven booking confirm
 - [x] Token refresh in web client
-- [ ] Webhooks in deployed env
+- [ ] Webhooks in deployed env (configure per `DEPLOYMENT.md`)
 - [x] Admin (users, listing moderation)
 - [ ] Email / deploy webhooks (Phase 19)
 

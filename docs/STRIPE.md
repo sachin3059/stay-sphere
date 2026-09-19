@@ -27,6 +27,14 @@ Through the gateway:
 stripe listen --forward-to localhost:8080/api/payments/webhooks/stripe
 ```
 
+### Deployed environment
+
+Create a webhook in the [Stripe Dashboard](https://dashboard.stripe.com/webhooks) pointing to:
+
+`https://<your-public-host>/api/payments/webhooks/stripe`
+
+Use the endpoint’s signing secret as `STRIPE_WEBHOOK_SECRET`. See **`docs/DEPLOYMENT.md`**.
+
 ## 3. Pay for a booking
 
 1. Register / login → copy `accessToken`. Hosts: `POST /api/auth/become-host` then use new token.

@@ -13,7 +13,7 @@ import java.io.IOException;
 @Slf4j
 public class EmailService {
 
-    @Value("${sendgrid.api-key}")
+    @Value("${sendgrid.api-key:}")
     private String apiKey;
 
     @Value("${sendgrid.from-email}")
@@ -23,6 +23,10 @@ public class EmailService {
     private String fromName;
 
     public boolean sendEmail(String to, String subject, String body) {
+        if (apiKey == null || apiKey.isBlank()) {
+            log.info("SendGrid not configured; skipping email to {}", to);
+            return false;
+        }
         try {
             Email from = new Email(fromEmail, fromName);
             Email toEmail = new Email(to);
