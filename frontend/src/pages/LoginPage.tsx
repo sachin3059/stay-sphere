@@ -13,6 +13,8 @@ export function LoginPage() {
   const location = useLocation();
   const redirectTo =
     (location.state as { from?: string } | null)?.from ?? "/";
+  const sessionExpired =
+    new URLSearchParams(location.search).get("session") === "expired";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
@@ -55,6 +57,11 @@ export function LoginPage() {
         </>
       }
     >
+      {sessionExpired && (
+        <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
+          Your session expired. Please sign in again.
+        </p>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Email"

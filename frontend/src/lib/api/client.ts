@@ -1,3 +1,7 @@
+import {
+  isAuthRefreshExemptPath,
+  refreshAccessToken,
+} from "@/lib/auth/refreshSession";
 import { ApiError, type ApiErrorBody, type ApiResponse } from "./types";
 
 const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
@@ -12,14 +16,22 @@ type RequestOptions = {
   token?: string | null;
   idempotencyKey?: string;
   headers?: Record<string, string>;
+  /** @internal skip refresh retry */
+  _authRetried?: boolean;
 };
 
 export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { method = "GET", body, token, idempotencyKey, headers = {} } =
-    options;
+  const {
+    method = "GET",
+    body,
+    token,
+    idempotencyKey,
+    headers = {},
+    _authRetried = false,
+  } = options;
   const url = `${getApiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
 
   const reqHeaders: Record<string, string> = {
@@ -54,6 +66,22 @@ export async function apiRequest<T>(
   }
 
   if (!response.ok) {
+    if (
+      response.status === 401 &&
+      !_authRetried &&
+      token &&
+      !isAuthRefreshExemptPath(path)
+    ) {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        return apiRequest<T>(path, {
+          ...options,
+          token: newToken,
+          _authRetried: true,
+        });
+      }
+    }
+
     const errBody = json as ApiErrorBody | null;
     const message =
       errBody?.message ??

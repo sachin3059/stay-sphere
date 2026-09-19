@@ -1,4 +1,5 @@
 import { apiData, getApiBaseUrl } from "@/lib/api/client";
+import { fetchWithAuthRetry } from "@/lib/auth/refreshSession";
 import { ApiError, type ApiErrorBody, type ApiResponse } from "@/lib/api/types";
 import type {
   CreatePropertyPayload,
@@ -77,12 +78,9 @@ export async function uploadPropertyImages(
     form.append("files", file);
   }
   const url = `${getApiBaseUrl()}/api/properties/${propertyId}/images`;
-  const response = await fetch(url, {
+  const response = await fetchWithAuthRetry(url, {
     method: "POST",
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    token,
     body: form,
   });
 

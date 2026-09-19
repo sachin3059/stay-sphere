@@ -1,0 +1,237 @@
+# StaySphere — Application build roadmap (sequenced)
+
+Single ordered list of what we are building: **guest booking marketplace** + **host listings** + **payments**, on the API gateway (`:8080`) and React web app (`:5173`).
+
+Use this as the **default order of work** (one slice at a time, commit when stable).
+
+---
+
+## Part A — Completed (do not re-do unless fixing bugs)
+
+| # | Slice | Delivered |
+|---|--------|-----------|
+| A1 | **Platform backend** | Microservices, Flyway, booking overlap, Redis lock (release after create), Stripe intents, Kafka confirm saga, Postgres search, CORS, become-host API, E2E script |
+| A2 | **Web foundation** | Vite/React/Tailwind, layout, API client, routing, env |
+| A3 | **Auth (email)** | Register, login, logout, JWT in Zustand, become host |
+| A4 | **Listings (guest)** | Explore, advanced search, property detail |
+| A5 | **Listings (host)** | Create property, pricing rule, my listings |
+| A6 | **Booking + Stripe** | Book flow, PaymentElement, my trips, cancel pending, 3DS return route |
+| A7 | **Host ops** | Reservations dashboard, resume payment on pending trips |
+| A8 | **Photos** | Cloudinary upload on create + manage photos per listing |
+| A9 | **Session reliability** | 401 → refresh + retry, proactive refresh, session-expired login message |
+
+---
+
+## Part B — Remaining work (build in this order)
+
+### Phase 9 — Availability-aware booking (guest + host) ← **current**
+
+**Goal:** Dates reflect real availability; hosts can block nights.
+
+| # | Change | Layer | Notes |
+|---|--------|--------|--------|
+| 9.1 | `GET /api/availability/{propertyId}/check` before create booking | Frontend | Book form validation + error copy |
+| 9.2 | Show availability hint on property detail (optional date pickers) | Frontend | Read-only check or mini calendar |
+| 9.3 | `GET /api/availability/{propertyId}/ranges` or blocked list for UI | Frontend | Disable bad dates in date inputs |
+| 9.4 | Host page: block dates — `POST /api/availability/block` | Frontend | Per listing |
+| 9.5 | Host page: view blocked — `GET /api/availability/{propertyId}/blocked` | Frontend | Calendar or list |
+
+**Acceptance:** Cannot book blocked dates; host blocks show for guests.
+
+---
+
+### Phase 10 — Pricing transparency (guest)
+
+**Goal:** Guest sees server price before paying.
+
+| # | Change | Layer | Notes |
+|---|--------|--------|--------|
+| 10.1 | `POST /api/pricing/calculate` on book page when dates change | Frontend | Show nightly + total |
+| 10.2 | Align displayed total with booking `totalPrice` after create | Frontend | Same numbers as backend |
+
+**Acceptance:** Book page total matches My trips / payment amount.
+
+---
+
+### Phase 11 — Waitlist (guest + host)
+
+**Goal:** When dates are unavailable, guest can join a queue.
+
+| # | Change | Layer | Notes |
+|---|--------|--------|--------|
+| 11.1 | `POST /api/waitlist/join` from property/book flow | Frontend | When check fails |
+| 11.2 | `GET /api/waitlist/my` — “My waitlist” page or section | Frontend | Cancel via `POST .../cancel` |
+| 11.3 | Host: `GET /api/waitlist/property/{id}?checkIn&checkOut` | Frontend | Under listing or reservations |
+
+**Acceptance:** Join, see position/status, cancel; host sees demand for dates.
+
+---
+
+### Phase 12 — Notifications (guest + host)
+
+**Goal:** In-app view of booking/payment-related events.
+
+| # | Change | Layer | Notes |
+|---|--------|--------|--------|
+| 12.1 | `GET /api/notifications/my` | Frontend | List + unread styling |
+| 12.2 | Header bell + link to notifications page | Frontend | Optional poll/refetch |
+| 12.3 | Deep links to trip / listing where `referenceId` allows | Frontend | Best-effort |
+
+**Acceptance:** After booking confirm, user sees notification in UI (if backend emits).
+
+---
+
+### Phase 13 — Listing management (edit lifecycle)
+
+**Goal:** Hosts can change listing details without recreating property.
+
+| # | Change | Layer | Notes |
+|---|--------|--------|--------|
+| 13.1 | **`PUT` or `PATCH /api/properties/{id}`** | **Backend** | Auth: host owns property |
+| 13.2 | Edit listing page (title, description, price, amenities, etc.) | Frontend | After 13.1 |
+| 13.3 | Update pricing rule or document “edit base price via rule API” | Backend/Frontend | May need `PUT /api/pricing/rules` |
+| 13.4 | Deactivate/archive listing (status) | Backend + Frontend | If `PropertyStatus` supports it |
+| 13.5 | Delete single image from listing | Backend + Frontend | Cloudinary delete + DB update |
+
+**Acceptance:** Host edits listing; Explore reflects changes.
+
+---
+
+### Phase 14 — Trip & payment detail (guest)
+
+**Goal:** Receipts and payment status on demand.
+
+| # | Change | Layer | Notes |
+|---|--------|--------|--------|
+| 14.1 | Trip detail route `/bookings/:id` | Frontend | `GET /api/bookings/{id}` |
+| 14.2 | Payment block — `GET /api/payments/booking/{bookingId}` | Frontend | Status, amount, method |
+| 14.3 | Link from My trips row to detail | Frontend | |
+
+**Acceptance:** Confirmed trip shows payment info.
+
+---
+
+### Phase 15 — Refunds & host payment actions (policy-driven)
+
+**Goal:** Support cancellation refunds where business rules allow.
+
+| # | Change | Layer | Notes |
+|---|--------|--------|--------|
+| 15.1 | Document who may call `POST /api/payments/{id}/refund` | Backend/docs | Guest vs host vs admin |
+| 15.2 | UI for eligible refunds (e.g. host on cancelled booking) | Frontend | After policy clear |
+| 15.3 | Stripe webhook hardening for prod | Backend/ops | `STRIPE_WEBHOOK_SECRET`, idempotent handlers |
+
+**Acceptance:** Refund path testable in Stripe test mode with clear roles.
+
+---
+
+### Phase 16 — Explore & discovery upgrades
+
+**Goal:** Richer search and listing presentation.
+
+| # | Change | Layer | Notes |
+|---|--------|--------|--------|
+| 16.1 | Property image gallery on detail (all `imageUrls`) | Frontend | |
+| 16.2 | Map / coordinates on detail (lat/lng already on property) | Frontend | Optional map provider |
+| 16.3 | Date-range search on Explore | Backend + Frontend | If product requires; may extend search API |
+| 16.4 | Sort (price, newest) and pagination | Backend + Frontend | If result sets grow |
+
+**Acceptance:** Better browse experience without changing core book flow.
+
+---
+
+### Phase 17 — Account & social auth (later enhancement)
+
+**Goal:** Faster signup and account linking (not required for MVP).
+
+| # | Change | Layer | Notes |
+|---|--------|--------|--------|
+| 17.1 | OAuth2/OIDC — Google | Backend + Frontend | Spring OAuth2 client, callback URLs |
+| 17.2 | OAuth2 — GitHub | Backend + Frontend | Same pattern |
+| 17.3 | Link OAuth identity to existing email account | Backend | Conflict rules |
+| 17.4 | Sign in with ChatGPT | Partner only | Only if OpenAI approves app |
+| 17.5 | Profile page (name, email read-only) | Frontend | Extend when profile APIs exist |
+| 17.6 | Forgot password / email verification | Backend + Frontend | SendGrid |
+
+**Acceptance:** “Continue with Google” issues same JWT contract as email login.
+
+---
+
+### Phase 18 — Admin & operations
+
+**Goal:** Platform operator tools (optional for demo MVP).
+
+| # | Change | Layer | Notes |
+|---|--------|--------|--------|
+| 18.1 | ADMIN role assignment (not public register) | Backend | Already restricted; needs admin API |
+| 18.2 | Admin UI: users, listings moderation | Frontend | |
+| 18.3 | Actuator/health dashboard link for ops | Docs/ops | |
+
+---
+
+### Phase 19 — Production deployment
+
+**Goal:** Runnable outside localhost.
+
+| # | Change | Layer | Notes |
+|---|--------|--------|--------|
+| 19.1 | Frontend production build + hosting | Ops | `npm run build`, CDN or static behind gateway |
+| 19.2 | Env matrix: gateway CORS, JWT, Stripe, Cloudinary | Ops | Secrets not in git |
+| 19.3 | Stripe webhooks on public URL | Ops | |
+| 19.4 | CI: backend tests + frontend build | CI | Extend existing pipeline |
+| 19.5 | Rate limiting / API versioning | Backend | Per IMPROVEMENT_PLAN optional items |
+| 19.6 | Real email (SendGrid) for transactional mail | Backend | |
+
+**Acceptance:** Staging URL completes register → book → pay → confirm.
+
+---
+
+## Part C — Application capabilities map (everything we are building)
+
+Use this as the **feature checklist** (✓ = shipped in Part A).
+
+### Guest
+
+- [x] Discover stays (Explore, search)
+- [x] View listing detail
+- [x] Register / login (email)
+- [x] Book dates + guests
+- [x] Pay with Stripe (test)
+- [x] My trips (view, cancel pending, resume pay)
+- [ ] Waitlist when unavailable
+- [ ] Notifications
+- [ ] Trip/payment receipt detail
+- [ ] Social login (later)
+
+### Host
+
+- [x] Become host
+- [x] Create listing + pricing
+- [x] Upload photos (Cloudinary)
+- [x] View reservations across listings
+- [ ] Block calendar dates
+- [ ] Edit / archive listing
+- [ ] Remove photos
+- [ ] Waitlist view per property
+- [ ] Refunds (if policy allows)
+
+### Platform
+
+- [x] API gateway + JWT
+- [x] Booking idempotency + overlap DB constraint
+- [x] Payment intents + confirm sync
+- [x] Event-driven booking confirm
+- [x] Token refresh in web client
+- [ ] Webhooks in deployed env
+- [ ] Admin / email / OAuth (later)
+
+---
+
+## How to use this doc
+
+1. Pick the **next open phase** in Part B (currently **Phase 9**).
+2. Implement all rows in that phase (or agree to split a phase across two PRs).
+3. Update checkboxes in Part C when a capability ships.
+4. Keep `frontend/README.md` “Build order” in sync with the phase number for day-to-day dev.
+
+**Current focus:** **Phase 9 — Availability**, then **Phase 10 — Pricing transparency**.
