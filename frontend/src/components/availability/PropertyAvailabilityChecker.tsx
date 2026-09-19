@@ -6,6 +6,7 @@ import { formatInr } from "@/lib/format";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { JoinWaitlistButton } from "@/components/waitlist/JoinWaitlistButton";
 import { Button } from "@/components/ui/Button";
 
 type Props = {
@@ -33,6 +34,8 @@ export function PropertyAvailabilityChecker({ propertyId, signedIn }: Props) {
     enabled: canCheck,
     retry: false,
   });
+
+  const [guests, setGuests] = useState("2");
 
   const bookHref = useMemo(() => {
     if (!canCheck || !data?.available) return `/properties/${propertyId}/book`;
@@ -68,12 +71,29 @@ export function PropertyAvailabilityChecker({ propertyId, signedIn }: Props) {
           </span>
         </p>
       )}
+      {canCheck && (
+        <Input
+          label="Guests"
+          type="number"
+          min={1}
+          value={guests}
+          onChange={(e) => setGuests(e.target.value)}
+        />
+      )}
       {signedIn && data?.available && canCheck && (
         <Link to={bookHref}>
           <Button className="w-full" size="sm">
             Book these dates
           </Button>
         </Link>
+      )}
+      {canCheck && data && !data.available && (
+        <JoinWaitlistButton
+          propertyId={propertyId}
+          checkIn={checkIn}
+          checkOut={checkOut}
+          totalGuests={Number(guests) || 1}
+        />
       )}
     </div>
   );

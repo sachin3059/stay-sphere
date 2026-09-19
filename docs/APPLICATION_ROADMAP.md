@@ -21,26 +21,13 @@ Use this as the **default order of work** (one slice at a time, commit when stab
 | A9 | **Session reliability** | 401 → refresh + retry, proactive refresh, session-expired login message |
 | A10 | **Availability** | Check before book, detail date checker, host block calendar |
 | A11 | **Pricing transparency** | Server quote on book + property date checker |
+| A12 | **Waitlist** | Join when unavailable, my waitlist, host queue view |
 
 ---
 
 ## Part B — Remaining work (build in this order)
 
-### Phase 11 — Waitlist (guest + host) ← **current**
-
-**Goal:** When dates are unavailable, guest can join a queue.
-
-| # | Change | Layer | Notes |
-|---|--------|--------|--------|
-| 11.1 | `POST /api/waitlist/join` from property/book flow | Frontend | When check fails |
-| 11.2 | `GET /api/waitlist/my` — “My waitlist” page or section | Frontend | Cancel via `POST .../cancel` |
-| 11.3 | Host: `GET /api/waitlist/property/{id}?checkIn&checkOut` | Frontend | Under listing or reservations |
-
-**Acceptance:** Join, see position/status, cancel; host sees demand for dates.
-
----
-
-### Phase 12 — Notifications (guest + host)
+### Phase 12 — Notifications (guest + host) ← **current**
 
 **Goal:** In-app view of booking/payment-related events.
 
@@ -171,7 +158,7 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 - [x] Book dates + guests
 - [x] Pay with Stripe (test)
 - [x] My trips (view, cancel pending, resume pay)
-- [ ] Waitlist when unavailable
+- [x] Waitlist when unavailable
 - [ ] Notifications
 - [ ] Trip/payment receipt detail
 - [ ] Social login (later)
@@ -185,7 +172,7 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 - [x] Block calendar dates (host); availability check on book
 - [ ] Edit / archive listing
 - [ ] Remove photos
-- [ ] Waitlist view per property
+- [x] Waitlist view per property (host calendar)
 - [ ] Refunds (if policy allows)
 
 ### Platform
@@ -202,9 +189,9 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 
 ## How to use this doc
 
-1. Pick the **next open phase** in Part B (currently **Phase 11**).
+1. Pick the **next open phase** in Part B (currently **Phase 12**).
 2. Implement all rows in that phase (or agree to split a phase across two PRs).
 3. Update checkboxes in Part C when a capability ships.
 4. Keep `frontend/README.md` “Build order” in sync with the phase number for day-to-day dev.
 
-**Current focus:** **Phase 11 — Waitlist**, then **Phase 12 — Notifications**.
+**Current focus:** **Phase 12 — Notifications**, then **Phase 13 — Edit listings**.

@@ -7,6 +7,7 @@ import { createBooking } from "@/features/bookings/api";
 import { calculateStayPrice } from "@/features/pricing/api";
 import { createStripeIntent } from "@/features/payments/api";
 import { BookingPriceSummary } from "@/components/pricing/BookingPriceSummary";
+import { JoinWaitlistButton } from "@/components/waitlist/JoinWaitlistButton";
 import { fetchPropertyById } from "@/features/properties/api";
 import { formatInr } from "@/lib/format";
 import { ApiError } from "@/lib/api/types";
@@ -103,7 +104,7 @@ export function BookPropertyPage() {
       return;
     }
     if (availability && !availability.available) {
-      setError(availability.message);
+      setError("These dates aren't available. Join the waitlist below.");
       return;
     }
     bookAndPay.mutate();
@@ -188,6 +189,14 @@ export function BookPropertyPage() {
               ? "Reserving…"
               : "Continue to payment"}
           </Button>
+          {canCheck && availability && !availability.available && (
+            <JoinWaitlistButton
+              propertyId={propertyId}
+              checkIn={checkIn}
+              checkOut={checkOut}
+              totalGuests={Number(totalGuests)}
+            />
+          )}
         </form>
       </Card>
     </div>

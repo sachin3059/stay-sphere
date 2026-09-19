@@ -41,7 +41,8 @@ src/
 7. **Listing photos** — Cloudinary upload on create + manage photos
 8. **Session** — refresh on 401 + proactive token refresh
 9. **Availability** — check dates, host calendar blocks
-10. **Pricing quote** — server calculate on book (current)
+10. **Pricing quote** — server calculate on book
+11. **Waitlist** — join when unavailable, my waitlist, host queue (current)
 
 ### Booking flow (manual test)
 
@@ -77,4 +78,9 @@ Access tokens expire; the app calls `POST /api/auth/refresh` on **401**, retries
 
 Pick check-in/out on **Book** or property **Check dates** — total comes from `POST /api/pricing/calculate` (same logic as booking). Payment uses the booking `totalPrice` from the server.
 
-**Later steps:** waitlist UI, notifications, OAuth (Google/GitHub).
+### Step 11 (waitlist)
+
+- **Guest:** Unavailable dates → **Join waitlist** on book or property checker; **My waitlist** in user menu (`/waitlist/my`).
+- **Host:** Listing **Calendar** → waitlist queue for the From/To range.
+
+**Later steps:** notifications inbox, OAuth (Google/GitHub).

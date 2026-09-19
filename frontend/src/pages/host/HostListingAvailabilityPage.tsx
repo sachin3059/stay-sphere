@@ -5,6 +5,7 @@ import {
   blockPropertyDates,
   fetchBlockedDates,
 } from "@/features/availability/api";
+import { fetchPropertyWaitlist } from "@/features/waitlist/api";
 import { fetchPropertyById } from "@/features/properties/api";
 import { ApiError } from "@/lib/api/types";
 import { useAuthStore } from "@/store/authStore";
@@ -48,6 +49,17 @@ export function HostListingAvailabilityPage() {
     queryKey: ["blocked-dates", propertyId],
     queryFn: () => fetchBlockedDates(propertyId!),
     enabled: Boolean(propertyId),
+  });
+
+  const canQueryWaitlist = Boolean(
+    startDate && endDate && endDate > startDate,
+  );
+
+  const { data: waitlist, isLoading: loadingWaitlist } = useQuery({
+    queryKey: ["property-waitlist", propertyId, startDate, endDate],
+    queryFn: () =>
+      fetchPropertyWaitlist(propertyId!, startDate, endDate),
+    enabled: Boolean(propertyId && canQueryWaitlist),
   });
 
   const block = useMutation({
@@ -159,6 +171,38 @@ export function HostListingAvailabilityPage() {
             {block.isPending ? "Saving…" : "Block dates"}
           </Button>
         </form>
+      </Card>
+
+      <Card className="mt-6 p-6">
+        <h2 className="font-medium text-ink">Waitlist queue</h2>
+        <p className="mt-1 text-sm text-muted">
+          Uses the <strong>From / To</strong> dates above. Guests waiting for those
+          nights appear in order.
+        </p>
+        {!canQueryWaitlist ? (
+          <p className="mt-4 text-sm text-muted">
+            Set From and To dates to view the waitlist.
+          </p>
+        ) : loadingWaitlist ? (
+          <p className="mt-4 text-sm text-muted">Loading…</p>
+        ) : waitlist && waitlist.length > 0 ? (
+          <ul className="mt-4 space-y-2">
+            {waitlist.map((w) => (
+              <li
+                key={w.id}
+                className="flex flex-wrap justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm"
+              >
+                <span>
+                  #{w.queuePosition} · {w.checkIn} → {w.checkOut} ·{" "}
+                  {w.totalGuests} guest{w.totalGuests > 1 ? "s" : ""}
+                </span>
+                <span className="text-xs text-stone-500">{w.status}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-4 text-sm text-muted">No one on the waitlist for this range.</p>
+        )}
       </Card>
 
       <Card className="mt-6 p-6">

@@ -7,6 +7,7 @@ import { BookingCompletePage } from "@/pages/BookingCompletePage";
 import { BookingPayPage } from "@/pages/BookingPayPage";
 import { ExplorePage } from "@/pages/ExplorePage";
 import { MyBookingsPage } from "@/pages/MyBookingsPage";
+import { MyWaitlistPage } from "@/pages/MyWaitlistPage";
 import { HomePage } from "@/pages/HomePage";
 import { HowItWorksPage } from "@/pages/HowItWorksPage";
 import { HostListingAvailabilityPage } from "@/pages/host/HostListingAvailabilityPage";
@@ -40,6 +41,14 @@ export const router = createBrowserRouter([
         element: (
           <AuthRequiredRoute>
             <MyBookingsPage />
+          </AuthRequiredRoute>
+        ),
+      },
+      {
+        path: "/waitlist/my",
+        element: (
+          <AuthRequiredRoute>
+            <MyWaitlistPage />
           </AuthRequiredRoute>
         ),
       },
