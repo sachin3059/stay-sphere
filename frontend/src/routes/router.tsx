@@ -4,6 +4,7 @@ import { HostOnlyRoute } from "@/components/auth/HostOnlyRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { BookPropertyPage } from "@/pages/BookPropertyPage";
 import { BookingCompletePage } from "@/pages/BookingCompletePage";
+import { BookingDetailPage } from "@/pages/BookingDetailPage";
 import { BookingPayPage } from "@/pages/BookingPayPage";
 import { ExplorePage } from "@/pages/ExplorePage";
 import { MyBookingsPage } from "@/pages/MyBookingsPage";
@@ -59,6 +60,14 @@ export const router = createBrowserRouter([
         element: (
           <AuthRequiredRoute>
             <MyNotificationsPage />
+          </AuthRequiredRoute>
+        ),
+      },
+      {
+        path: "/bookings/:bookingId",
+        element: (
+          <AuthRequiredRoute>
+            <BookingDetailPage />
           </AuthRequiredRoute>
         ),
       },

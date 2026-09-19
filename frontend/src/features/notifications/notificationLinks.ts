@@ -10,13 +10,13 @@ export function notificationActionHref(
 
   switch (n.notificationType) {
     case "BOOKING_CREATED":
-      return { to: "/bookings/my", label: "View my trips" };
+      return { to: `/bookings/${ref}`, label: "View trip" };
     case "BOOKING_CONFIRMED":
       return role === "HOST"
         ? { to: "/host/reservations", label: "View reservations" }
-        : { to: "/bookings/my", label: "View my trips" };
+        : { to: `/bookings/${ref}`, label: "View trip" };
     case "BOOKING_CANCELLED":
-      return { to: "/bookings/my", label: "View my trips" };
+      return { to: `/bookings/${ref}`, label: "View trip" };
     case "PAYMENT_SUCCESS":
     case "PAYMENT_FAILED":
     case "PAYMENT_REFUNDED":

@@ -24,26 +24,13 @@ Use this as the **default order of work** (one slice at a time, commit when stab
 | A12 | **Waitlist** | Join when unavailable, my waitlist, host queue view |
 | A13 | **Notifications** | Inbox, header bell, deep links to trips / waitlist / host reservations |
 | A14 | **Listing edits** | PUT property, edit page, unlist, remove photos, pricing rule update |
+| A15 | **Trip detail** | `/bookings/:id` with booking + payment receipt block |
 
 ---
 
 ## Part B — Remaining work (build in this order)
 
-### Phase 14 — Trip & payment detail (guest) ← **current**
-
-**Goal:** Receipts and payment status on demand.
-
-| # | Change | Layer | Notes |
-|---|--------|--------|--------|
-| 14.1 | Trip detail route `/bookings/:id` | Frontend | `GET /api/bookings/{id}` |
-| 14.2 | Payment block — `GET /api/payments/booking/{bookingId}` | Frontend | Status, amount, method |
-| 14.3 | Link from My trips row to detail | Frontend | |
-
-**Acceptance:** Confirmed trip shows payment info.
-
----
-
-### Phase 15 — Refunds & host payment actions (policy-driven)
+### Phase 15 — Refunds & host payment actions (policy-driven) ← **current**
 
 **Goal:** Support cancellation refunds where business rules allow.
 
@@ -132,7 +119,7 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 - [x] My trips (view, cancel pending, resume pay)
 - [x] Waitlist when unavailable
 - [x] Notifications
-- [ ] Trip/payment receipt detail
+- [x] Trip/payment receipt detail
 - [ ] Social login (later)
 
 ### Host
@@ -161,9 +148,9 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 
 ## How to use this doc
 
-1. Pick the **next open phase** in Part B (currently **Phase 14**).
+1. Pick the **next open phase** in Part B (currently **Phase 15**).
 2. Implement all rows in that phase (or agree to split a phase across two PRs).
 3. Update checkboxes in Part C when a capability ships.
 4. Keep `frontend/README.md` “Build order” in sync with the phase number for day-to-day dev.
 
-**Current focus:** **Phase 14 — Trip detail**, then **Phase 15 — Refunds**.
+**Current focus:** **Phase 15 — Refunds**, then **Phase 16 — Explore upgrades**.

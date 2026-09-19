@@ -44,7 +44,8 @@ src/
 10. **Pricing quote** — server calculate on book
 11. **Waitlist** — join when unavailable, my waitlist, host queue
 12. **Notifications** — inbox, header bell, poll/refetch
-13. **Edit listings** — host edit page, unlist, remove photos (current)
+13. **Edit listings** — host edit page, unlist, remove photos
+14. **Trip detail** — booking + payment receipt on `/bookings/:id` (current)
 
 ### Booking flow (manual test)
 
@@ -98,4 +99,9 @@ Pick check-in/out on **Book** or property **Check dates** — total comes from `
 
 Restart **property-service** after pulling backend changes (`PUT /api/properties/{id}`, `DELETE .../images`).
 
-**Later steps:** trip detail (Phase 14), OAuth (Google/GitHub).
+### Step 14 (trip detail)
+
+- **Guest:** My trips → **Trip details** (`/bookings/:id`) — stay summary + payment status from `GET /api/payments/booking/{bookingId}`.
+- Pending trips: **Complete payment** / **Cancel** from the detail page.
+
+**Later steps:** refunds (Phase 15), OAuth (Google/GitHub).

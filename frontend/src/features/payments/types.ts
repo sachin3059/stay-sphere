@@ -14,5 +14,9 @@ export type PaymentRecord = {
   status: string;
   amount: number;
   currency: string;
+  paymentMethod?: string;
   transactionId?: string;
+  failureReason?: string;
+  createdAt?: string;
+  processedAt?: string;
 };

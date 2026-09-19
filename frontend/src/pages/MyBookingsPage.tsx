@@ -106,12 +106,20 @@ export function MyBookingsPage() {
                       {b.totalGuests} guest{b.totalGuests > 1 ? "s" : ""} ·{" "}
                       {formatInr(b.totalPrice)}
                     </p>
-                    <Link
-                      to={`/properties/${b.propertyId}`}
-                      className="mt-2 inline-block text-sm text-brand-700 hover:underline"
-                    >
-                      View property
-                    </Link>
+                    <div className="mt-2 flex flex-wrap gap-3 text-sm">
+                      <Link
+                        to={`/bookings/${b.id}`}
+                        className="font-medium text-brand-700 hover:underline"
+                      >
+                        Trip details
+                      </Link>
+                      <Link
+                        to={`/properties/${b.propertyId}`}
+                        className="text-brand-700 hover:underline"
+                      >
+                        View property
+                      </Link>
+                    </div>
                   </div>
                   {b.status === "PENDING" && (
                     <div className="flex flex-wrap gap-2">
