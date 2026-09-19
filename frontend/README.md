@@ -43,7 +43,8 @@ src/
 9. **Availability** — check dates, host calendar blocks
 10. **Pricing quote** — server calculate on book
 11. **Waitlist** — join when unavailable, my waitlist, host queue
-12. **Notifications** — inbox, header bell, poll/refetch (current)
+12. **Notifications** — inbox, header bell, poll/refetch
+13. **Edit listings** — host edit page, unlist, remove photos (current)
 
 ### Booking flow (manual test)
 
@@ -90,4 +91,11 @@ Pick check-in/out on **Book** or property **Check dates** — total comes from `
 - Unread count uses local last-seen time; inbox refreshes on focus and every 60s.
 - After book + pay (Kafka events), guest/host should see booking/payment rows (email may still fail in dev without SendGrid).
 
-**Later steps:** edit listings (Phase 13), trip detail, OAuth (Google/GitHub).
+### Step 13 (edit listings)
+
+- **Host:** My listings → **Edit** (`/host/listings/:id/edit`) — save title, price, amenities; **Unlist** hides from Explore.
+- **Photos:** **Remove** on manage photos page; `PUT` syncs pricing `basePrice` + `minimumStay`.
+
+Restart **property-service** after pulling backend changes (`PUT /api/properties/{id}`, `DELETE .../images`).
+
+**Later steps:** trip detail (Phase 14), OAuth (Google/GitHub).

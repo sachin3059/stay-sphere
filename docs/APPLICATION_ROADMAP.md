@@ -23,28 +23,13 @@ Use this as the **default order of work** (one slice at a time, commit when stab
 | A11 | **Pricing transparency** | Server quote on book + property date checker |
 | A12 | **Waitlist** | Join when unavailable, my waitlist, host queue view |
 | A13 | **Notifications** | Inbox, header bell, deep links to trips / waitlist / host reservations |
+| A14 | **Listing edits** | PUT property, edit page, unlist, remove photos, pricing rule update |
 
 ---
 
 ## Part B — Remaining work (build in this order)
 
-### Phase 13 — Listing management (edit lifecycle) ← **current**
-
-**Goal:** Hosts can change listing details without recreating property.
-
-| # | Change | Layer | Notes |
-|---|--------|--------|--------|
-| 13.1 | **`PUT` or `PATCH /api/properties/{id}`** | **Backend** | Auth: host owns property |
-| 13.2 | Edit listing page (title, description, price, amenities, etc.) | Frontend | After 13.1 |
-| 13.3 | Update pricing rule or document “edit base price via rule API” | Backend/Frontend | May need `PUT /api/pricing/rules` |
-| 13.4 | Deactivate/archive listing (status) | Backend + Frontend | If `PropertyStatus` supports it |
-| 13.5 | Delete single image from listing | Backend + Frontend | Cloudinary delete + DB update |
-
-**Acceptance:** Host edits listing; Explore reflects changes.
-
----
-
-### Phase 14 — Trip & payment detail (guest)
+### Phase 14 — Trip & payment detail (guest) ← **current**
 
 **Goal:** Receipts and payment status on demand.
 
@@ -157,8 +142,8 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 - [x] Upload photos (Cloudinary)
 - [x] View reservations across listings
 - [x] Block calendar dates (host); availability check on book
-- [ ] Edit / archive listing
-- [ ] Remove photos
+- [x] Edit / archive listing
+- [x] Remove photos
 - [x] Waitlist view per property (host calendar)
 - [ ] Refunds (if policy allows)
 
@@ -176,9 +161,9 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 
 ## How to use this doc
 
-1. Pick the **next open phase** in Part B (currently **Phase 13**).
+1. Pick the **next open phase** in Part B (currently **Phase 14**).
 2. Implement all rows in that phase (or agree to split a phase across two PRs).
 3. Update checkboxes in Part C when a capability ships.
 4. Keep `frontend/README.md` “Build order” in sync with the phase number for day-to-day dev.
 
-**Current focus:** **Phase 13 — Edit listings**, then **Phase 14 — Trip detail**.
+**Current focus:** **Phase 14 — Trip detail**, then **Phase 15 — Refunds**.

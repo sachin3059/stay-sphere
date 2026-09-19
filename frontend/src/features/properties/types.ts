@@ -35,6 +35,10 @@ export type PropertyType =
   | "CABIN"
   | "COTTAGE";
 
+export type PropertyStatus = "ACTIVE" | "INACTIVE" | "UNDER_REVIEW";
+
+export type UpdatePropertyPayload = CreatePropertyPayload;
+
 export type CreatePropertyPayload = {
   title: string;
   description?: string;

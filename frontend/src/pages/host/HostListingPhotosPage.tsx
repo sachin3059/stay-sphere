@@ -2,6 +2,7 @@ import { PropertyPhotoPicker } from "@/components/properties/PropertyPhotoPicker
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import {
+  deletePropertyImage,
   fetchPropertyById,
   uploadPropertyImages,
 } from "@/features/properties/api";
@@ -23,6 +24,20 @@ export function HostListingPhotosPage() {
     queryKey: ["property", propertyId],
     queryFn: () => fetchPropertyById(propertyId!),
     enabled: Boolean(propertyId),
+  });
+
+  const removeImage = useMutation({
+    mutationFn: (url: string) =>
+      deletePropertyImage(accessToken, propertyId!, url),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
+      queryClient.invalidateQueries({ queryKey: ["host-properties"] });
+    },
+    onError: (err: unknown) => {
+      setError(
+        err instanceof ApiError ? err.message : "Could not remove photo.",
+      );
+    },
   });
 
   const upload = useMutation({
@@ -65,8 +80,16 @@ export function HostListingPhotosPage() {
           <p className="text-sm font-medium text-ink">Current photos</p>
           <ul className="mt-3 grid grid-cols-3 gap-2">
             {property.imageUrls.map((src) => (
-              <li key={src} className="aspect-square overflow-hidden rounded-lg">
+              <li key={src} className="relative aspect-square overflow-hidden rounded-lg">
                 <img src={src} alt="" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  className="absolute right-1 top-1 rounded-md bg-black/60 px-2 py-0.5 text-xs text-white hover:bg-black/80 disabled:opacity-50"
+                  disabled={removeImage.isPending}
+                  onClick={() => removeImage.mutate(src)}
+                >
+                  Remove
+                </button>
               </li>
             ))}
           </ul>

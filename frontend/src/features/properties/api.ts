@@ -6,6 +6,8 @@ import type {
   CreatePricingRulePayload,
   Property,
   PropertySearchParams,
+  PropertyStatus,
+  UpdatePropertyPayload,
 } from "./types";
 
 function toQuery(params: PropertySearchParams): string {
@@ -48,12 +50,71 @@ export async function createProperty(
   });
 }
 
+export async function updateProperty(
+  token: string,
+  propertyId: string,
+  body: UpdatePropertyPayload,
+) {
+  return apiData<Property>(`/api/properties/${propertyId}`, {
+    method: "PUT",
+    body,
+    token,
+  });
+}
+
+export async function updatePropertyStatus(
+  token: string,
+  propertyId: string,
+  status: PropertyStatus,
+) {
+  return apiData<Property>(`/api/properties/${propertyId}/status`, {
+    method: "PATCH",
+    body: { status },
+    token,
+  });
+}
+
+export async function deletePropertyImage(
+  token: string,
+  propertyId: string,
+  imageUrl: string,
+) {
+  const qs = new URLSearchParams({ url: imageUrl });
+  return apiData<Property>(
+    `/api/properties/${propertyId}/images?${qs}`,
+    { method: "DELETE", token },
+  );
+}
+
 export async function createPricingRule(
   token: string,
   body: CreatePricingRulePayload,
 ) {
   return apiData<unknown>("/api/pricing/rules", {
     method: "POST",
+    body,
+    token,
+  });
+}
+
+export type PricingRule = {
+  id: string;
+  propertyId: string;
+  basePrice: number;
+  minimumStay?: number;
+};
+
+export async function fetchPricingRule(propertyId: string) {
+  return apiData<PricingRule>(`/api/pricing/rules/${propertyId}`);
+}
+
+export async function updatePricingRule(
+  token: string,
+  propertyId: string,
+  body: { basePrice?: number; minimumStay?: number },
+) {
+  return apiData<unknown>(`/api/pricing/rules/${propertyId}`, {
+    method: "PUT",
     body,
     token,
   });

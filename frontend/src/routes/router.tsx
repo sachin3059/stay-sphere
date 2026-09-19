@@ -11,6 +11,7 @@ import { MyNotificationsPage } from "@/pages/MyNotificationsPage";
 import { MyWaitlistPage } from "@/pages/MyWaitlistPage";
 import { HomePage } from "@/pages/HomePage";
 import { HowItWorksPage } from "@/pages/HowItWorksPage";
+import { EditListingPage } from "@/pages/host/EditListingPage";
 import { HostListingAvailabilityPage } from "@/pages/host/HostListingAvailabilityPage";
 import { HostListingPhotosPage } from "@/pages/host/HostListingPhotosPage";
 import { HostListingsPage } from "@/pages/host/HostListingsPage";
@@ -91,6 +92,14 @@ export const router = createBrowserRouter([
         element: (
           <HostOnlyRoute>
             <NewListingPage />
+          </HostOnlyRoute>
+        ),
+      },
+      {
+        path: "/host/listings/:id/edit",
+        element: (
+          <HostOnlyRoute>
+            <EditListingPage />
           </HostOnlyRoute>
         ),
       },

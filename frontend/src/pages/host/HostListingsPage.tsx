@@ -45,7 +45,18 @@ export function HostListingsPage() {
           {data.map((p) => (
             <li key={p.id} className="flex flex-col gap-2">
               <PropertyCard property={p} />
-              <div className="flex justify-center gap-4 text-sm font-medium">
+              {p.status === "INACTIVE" && (
+                <p className="text-center text-xs font-medium text-amber-800">
+                  Unlisted
+                </p>
+              )}
+              <div className="flex flex-wrap justify-center gap-4 text-sm font-medium">
+                <Link
+                  to={`/host/listings/${p.id}/edit`}
+                  className="text-brand-700 hover:underline"
+                >
+                  Edit
+                </Link>
                 <Link
                   to={`/host/listings/${p.id}/photos`}
                   className="text-brand-700 hover:underline"
