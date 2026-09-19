@@ -3,6 +3,7 @@ import { useAuthStore } from "@/store/authStore";
 import { Home, LogIn, UserPlus } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { Button } from "../ui/Button";
+import { NotificationBell } from "../notifications/NotificationBell";
 import { UserMenu } from "./UserMenu";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -47,6 +48,7 @@ export function SiteHeader() {
               >
                 My trips
               </NavLink>
+              <NotificationBell />
               <UserMenu />
             </>
           ) : (

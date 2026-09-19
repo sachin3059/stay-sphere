@@ -42,7 +42,8 @@ src/
 8. **Session** — refresh on 401 + proactive token refresh
 9. **Availability** — check dates, host calendar blocks
 10. **Pricing quote** — server calculate on book
-11. **Waitlist** — join when unavailable, my waitlist, host queue (current)
+11. **Waitlist** — join when unavailable, my waitlist, host queue
+12. **Notifications** — inbox, header bell, poll/refetch (current)
 
 ### Booking flow (manual test)
 
@@ -83,4 +84,10 @@ Pick check-in/out on **Book** or property **Check dates** — total comes from `
 - **Guest:** Unavailable dates → **Join waitlist** on book or property checker; **My waitlist** in user menu (`/waitlist/my`).
 - **Host:** Listing **Calendar** → waitlist queue for the From/To range.
 
-**Later steps:** notifications inbox, OAuth (Google/GitHub).
+### Step 12 (notifications)
+
+- Sign in → header **bell** (`/notifications`) lists `GET /api/notifications/my`.
+- Unread count uses local last-seen time; inbox refreshes on focus and every 60s.
+- After book + pay (Kafka events), guest/host should see booking/payment rows (email may still fail in dev without SendGrid).
+
+**Later steps:** edit listings (Phase 13), trip detail, OAuth (Google/GitHub).

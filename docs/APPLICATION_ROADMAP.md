@@ -22,26 +22,13 @@ Use this as the **default order of work** (one slice at a time, commit when stab
 | A10 | **Availability** | Check before book, detail date checker, host block calendar |
 | A11 | **Pricing transparency** | Server quote on book + property date checker |
 | A12 | **Waitlist** | Join when unavailable, my waitlist, host queue view |
+| A13 | **Notifications** | Inbox, header bell, deep links to trips / waitlist / host reservations |
 
 ---
 
 ## Part B — Remaining work (build in this order)
 
-### Phase 12 — Notifications (guest + host) ← **current**
-
-**Goal:** In-app view of booking/payment-related events.
-
-| # | Change | Layer | Notes |
-|---|--------|--------|--------|
-| 12.1 | `GET /api/notifications/my` | Frontend | List + unread styling |
-| 12.2 | Header bell + link to notifications page | Frontend | Optional poll/refetch |
-| 12.3 | Deep links to trip / listing where `referenceId` allows | Frontend | Best-effort |
-
-**Acceptance:** After booking confirm, user sees notification in UI (if backend emits).
-
----
-
-### Phase 13 — Listing management (edit lifecycle)
+### Phase 13 — Listing management (edit lifecycle) ← **current**
 
 **Goal:** Hosts can change listing details without recreating property.
 
@@ -159,7 +146,7 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 - [x] Pay with Stripe (test)
 - [x] My trips (view, cancel pending, resume pay)
 - [x] Waitlist when unavailable
-- [ ] Notifications
+- [x] Notifications
 - [ ] Trip/payment receipt detail
 - [ ] Social login (later)
 
@@ -189,9 +176,9 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 
 ## How to use this doc
 
-1. Pick the **next open phase** in Part B (currently **Phase 12**).
+1. Pick the **next open phase** in Part B (currently **Phase 13**).
 2. Implement all rows in that phase (or agree to split a phase across two PRs).
 3. Update checkboxes in Part C when a capability ships.
 4. Keep `frontend/README.md` “Build order” in sync with the phase number for day-to-day dev.
 
-**Current focus:** **Phase 12 — Notifications**, then **Phase 13 — Edit listings**.
+**Current focus:** **Phase 13 — Edit listings**, then **Phase 14 — Trip detail**.

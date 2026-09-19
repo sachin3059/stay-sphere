@@ -7,6 +7,7 @@ import { BookingCompletePage } from "@/pages/BookingCompletePage";
 import { BookingPayPage } from "@/pages/BookingPayPage";
 import { ExplorePage } from "@/pages/ExplorePage";
 import { MyBookingsPage } from "@/pages/MyBookingsPage";
+import { MyNotificationsPage } from "@/pages/MyNotificationsPage";
 import { MyWaitlistPage } from "@/pages/MyWaitlistPage";
 import { HomePage } from "@/pages/HomePage";
 import { HowItWorksPage } from "@/pages/HowItWorksPage";
@@ -49,6 +50,14 @@ export const router = createBrowserRouter([
         element: (
           <AuthRequiredRoute>
             <MyWaitlistPage />
+          </AuthRequiredRoute>
+        ),
+      },
+      {
+        path: "/notifications",
+        element: (
+          <AuthRequiredRoute>
+            <MyNotificationsPage />
           </AuthRequiredRoute>
         ),
       },

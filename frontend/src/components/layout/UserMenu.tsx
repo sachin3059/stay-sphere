@@ -11,6 +11,7 @@ import {
   Home,
   Luggage,
   ListOrdered,
+  Bell,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -108,6 +109,15 @@ export function UserMenu() {
           >
             <ListOrdered className="h-4 w-4 text-stone-500" />
             My waitlist
+          </Link>
+          <Link
+            to="/notifications"
+            role="menuitem"
+            className="flex items-center gap-2 px-4 py-2.5 text-sm text-ink hover:bg-stone-50"
+            onClick={() => setOpen(false)}
+          >
+            <Bell className="h-4 w-4 text-stone-500" />
+            Notifications
           </Link>
 
           {user.role === "GUEST" && (
