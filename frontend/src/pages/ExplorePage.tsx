@@ -1,6 +1,8 @@
 import { PropertyCard } from "@/components/properties/PropertyCard";
-import { PropertySearchForm } from "@/components/properties/PropertySearchForm";
+import { StaySearchBar } from "@/components/search/StaySearchBar";
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { PropertyCardSkeleton } from "@/components/ui/Skeleton";
 import { searchProperties } from "@/features/properties/api";
 import {
   EXPLORE_PAGE_SIZE,
@@ -11,7 +13,6 @@ import {
 import type { PropertySearchParams } from "@/features/properties/types";
 import { ApiError } from "@/lib/api/types";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/Button";
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
@@ -75,48 +76,58 @@ export function ExplorePage() {
     error instanceof ApiError ? error.message : error ? "Failed to load stays." : null;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+    <div className="page-container py-8 sm:py-10">
       <header className="mb-8">
-        <h1 className="font-display text-3xl font-semibold text-ink">
-          Explore stays
-        </h1>
+        <h1 className="section-heading">Explore stays</h1>
         <p className="mt-2 text-muted">
-          Live listings from the property service via the API gateway.
+          {filters.city
+            ? `Places in ${filters.city}`
+            : "Homes, apartments, and unique stays"}
         </p>
       </header>
 
-      <Card className="mb-10 p-5 sm:p-6">
-        <PropertySearchForm
+      <div className="mb-10">
+        <StaySearchBar
           initial={filters}
           onSearch={handleSearch}
           loading={isFetching}
+          variant="filters"
         />
-      </Card>
+      </div>
 
       {errorMessage && (
-        <p className="mb-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        <p
+          className="mb-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"
+          role="alert"
+        >
           {errorMessage}
         </p>
       )}
 
       {isLoading ? (
-        <p className="text-sm text-muted">Loading properties…</p>
+        <ul className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <li key={i}>
+              <PropertyCardSkeleton />
+            </li>
+          ))}
+        </ul>
       ) : data && data.length > 0 ? (
         <>
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted">
-              {paged.total} {paged.total === 1 ? "stay" : "stays"} found
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 pb-4">
+            <p className="text-sm font-medium text-ink">
+              {paged.total} {paged.total === 1 ? "stay" : "stays"}
               {paged.totalPages > 1 && (
-                <span>
+                <span className="font-normal text-muted">
                   {" "}
-                  · page {paged.page} of {paged.totalPages}
+                  · Page {paged.page} of {paged.totalPages}
                 </span>
               )}
             </p>
             <label className="flex items-center gap-2 text-sm text-stone-700">
-              Sort
+              <span className="text-muted">Sort by</span>
               <select
-                className="rounded-lg border border-border bg-white px-2 py-1.5"
+                className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-medium focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/15"
                 value={sort}
                 onChange={(e) =>
                   updateParams({
@@ -131,7 +142,7 @@ export function ExplorePage() {
               </select>
             </label>
           </div>
-          <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {paged.items.map((property) => (
               <li key={property.id}>
                 <PropertyCard property={property} />
@@ -139,7 +150,7 @@ export function ExplorePage() {
             ))}
           </ul>
           {paged.totalPages > 1 && (
-            <div className="mt-8 flex flex-wrap justify-center gap-2">
+            <div className="mt-10 flex flex-wrap justify-center gap-3">
               <Button
                 type="button"
                 variant="outline"
@@ -166,15 +177,14 @@ export function ExplorePage() {
           )}
         </>
       ) : (
-        <Card className="p-10 text-center">
-          <p className="font-medium text-ink">No stays match your filters</p>
+        <Card className="border-dashed p-12 text-center">
+          <p className="text-lg font-semibold text-ink">No stays match your search</p>
           <p className="mt-2 text-sm text-muted">
-            The database may have no listings yet, or your price range is too
-            narrow (e.g. min and max both ₹1000 hides ₹2500/night stays).
+            Try a different city or widen your price range.
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link to="/explore">
-              <Button variant="outline">Clear all filters</Button>
+              <Button variant="outline">Clear filters</Button>
             </Link>
             <Link to="/host/listings/new">
               <Button>List a property</Button>

@@ -1,137 +1,151 @@
+import { PropertyCard } from "@/components/properties/PropertyCard";
+import { PropertyCardSkeleton } from "@/components/ui/Skeleton";
+import { StaySearchBar } from "@/components/search/StaySearchBar";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { MapPin, Search, Shield, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { searchProperties } from "@/features/properties/api";
+import type { PropertySearchParams } from "@/features/properties/types";
+import { useQuery } from "@tanstack/react-query";
+import { ShieldCheck, Sparkles, Wifi } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
-const highlights = [
+const categories = [
+  { label: "Beachfront", emoji: "🏖️" },
+  { label: "City apartments", emoji: "🏙️" },
+  { label: "Mountain retreats", emoji: "⛰️" },
+  { label: "Family friendly", emoji: "👨‍👩‍👧" },
+  { label: "Work-friendly", emoji: "💻" },
+];
+
+const trustPoints = [
   {
-    icon: Search,
-    title: "Search that scales",
-    text: "Postgres full-text search across cities and listings — no extra search cluster.",
-  },
-  {
-    icon: Shield,
+    icon: ShieldCheck,
     title: "Book with confidence",
-    text: "Redis-backed locks, overlap constraints, and idempotent bookings.",
+    text: "Overlapping stays are blocked at the database. Your dates are held while you pay.",
   },
   {
     icon: Sparkles,
-    title: "Stripe checkout",
-    text: "Real PaymentIntents wired through the API gateway to confirm your stay.",
+    title: "Transparent pricing",
+    text: "See the full quote before checkout — no surprise fees at the door.",
+  },
+  {
+    icon: Wifi,
+    title: "Real listings",
+    text: "Photos, amenities, maps, and host calendars — everything in one place.",
   },
 ];
 
 export function HomePage() {
   const navigate = useNavigate();
-  const [city, setCity] = useState("");
-  const [guests, setGuests] = useState("2");
 
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
+  const { data: featured, isLoading } = useQuery({
+    queryKey: ["properties", "featured"],
+    queryFn: () => searchProperties({}),
+  });
+
+  const preview = (featured ?? []).slice(0, 8);
+
+  function handleSearch(params: PropertySearchParams) {
     const qs = new URLSearchParams();
-    if (city.trim()) qs.set("city", city.trim());
-    if (guests) qs.set("guests", guests);
+    if (params.city) qs.set("city", params.city);
+    if (params.guests != null) qs.set("guests", String(params.guests));
     const q = qs.toString();
     navigate(q ? `/explore?${q}` : "/explore");
   }
 
   return (
     <div>
-      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-brand-50/80 to-surface">
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(20,184,166,0.15),transparent)]"
-          aria-hidden
-        />
-        <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-          <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white/80 px-3 py-1 text-xs font-medium text-brand-800">
-            <MapPin className="h-3.5 w-3.5" />
-            Full-stack marketplace demo
-          </p>
-          <h1 className="max-w-2xl font-display text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
-            Find your next stay,
-            <span className="text-brand-700"> booked end to end.</span>
-          </h1>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-            StaySphere connects guests and hosts through a Spring microservices
-            backend — with JWT auth, Kafka events, and Stripe payments behind a
-            single gateway.
-          </p>
-
-          <Card className="mt-10 max-w-3xl p-4 sm:p-5">
-            <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted">
-              Search stays
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-brand-50/80 to-surface pb-4 pt-10 sm:pt-14">
+        <div className="page-container">
+          <div className="mx-auto max-w-3xl text-center">
+            <h1 className="text-4xl font-bold leading-tight tracking-tight text-ink sm:text-5xl sm:leading-[1.1]">
+              Find a place that feels like home
+            </h1>
+            <p className="mt-4 text-base text-muted sm:text-lg">
+              Discover stays across India — search by city, compare prices, and
+              book in minutes with secure checkout.
             </p>
-            <form
-              onSubmit={handleSearch}
-              className="flex flex-col gap-3 sm:flex-row sm:items-end"
-            >
-              <div className="flex-1">
-                <Input
-                  label="Where"
-                  placeholder="City, e.g. Pune"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                />
-              </div>
-              <div className="flex-1">
-                <Input
-                  label="Guests"
-                  type="number"
-                  min={1}
-                  placeholder="2"
-                  value={guests}
-                  onChange={(e) => setGuests(e.target.value)}
-                />
-              </div>
-              <Button type="submit" className="w-full sm:w-auto">
-                <Search className="h-4 w-4" />
-                Search
-              </Button>
-            </form>
-          </Card>
-
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/register">
-              <Button size="lg">Create account</Button>
-            </Link>
-            <Link to="/how-it-works">
-              <Button variant="outline" size="lg">See the architecture</Button>
-            </Link>
           </div>
+
+          <div className="mx-auto mt-10 max-w-4xl">
+            <StaySearchBar variant="hero" onSearch={handleSearch} />
+          </div>
+
+          <ul className="mt-10 flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+            {categories.map((cat) => (
+              <li key={cat.label} className="shrink-0">
+                <Link
+                  to="/explore"
+                  className="flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-ink shadow-sm transition hover:border-stone-300 hover:shadow"
+                >
+                  <span aria-hidden>{cat.emoji}</span>
+                  {cat.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <h2 className="font-display text-2xl font-semibold text-ink">
-          Built to show real engineering
-        </h2>
-        <p className="mt-2 max-w-2xl text-muted">
-          This UI is being added step by step. Under the hood you already have
-          Flyway migrations, transactional outbox, and a verified Stripe E2E
-          script.
-        </p>
-        <ul className="mt-10 grid gap-6 sm:grid-cols-3">
-          {highlights.map(({ icon: Icon, title, text }) => (
-            <li key={title}>
-              <Card className="h-full p-6">
+      <section className="page-container py-14 sm:py-16">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 className="section-heading">Popular stays</h2>
+            <p className="mt-2 text-muted">
+              Hand-picked from live listings — updated as hosts publish.
+            </p>
+          </div>
+          <Link to="/explore">
+            <Button variant="outline" size="sm">View all</Button>
+          </Link>
+        </div>
+
+        {isLoading ? (
+          <ul className="mt-8 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <li key={i}>
+                <PropertyCardSkeleton />
+              </li>
+            ))}
+          </ul>
+        ) : preview.length > 0 ? (
+          <ul className="mt-8 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+            {preview.map((property) => (
+              <li key={property.id}>
+                <PropertyCard property={property} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-10 rounded-2xl border border-dashed border-stone-300 bg-surface-muted px-6 py-14 text-center">
+            <p className="font-semibold text-ink">No listings yet</p>
+            <p className="mt-2 text-sm text-muted">
+              Be the first host in your area.
+            </p>
+            <Link to="/host/listings/new" className="mt-6 inline-block">
+              <Button>List a property</Button>
+            </Link>
+          </div>
+        )}
+      </section>
+
+      <section className="border-t border-stone-200 bg-surface-muted">
+        <div className="page-container py-14 sm:py-16">
+          <h2 className="section-heading text-center">Why guests choose us</h2>
+          <ul className="mt-12 grid gap-8 sm:grid-cols-3">
+            {trustPoints.map(({ icon: Icon, title, text }) => (
+              <li key={title} className="text-center sm:text-left">
                 <span
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700"
+                  className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-brand-600 shadow-sm sm:mx-0"
                   aria-hidden
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-6 w-6" />
                 </span>
-                <h3 className="mt-4 font-display text-lg font-semibold">
-                  {title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  {text}
-                </p>
-              </Card>
-            </li>
-          ))}
-        </ul>
+                <h3 className="mt-4 text-lg font-semibold text-ink">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{text}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
     </div>
   );

@@ -14,6 +14,7 @@ import {
   Bell,
   User,
   Shield,
+  Menu,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -71,17 +72,19 @@ export function UserMenu() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-xl border border-border bg-white px-3 py-2 text-sm font-medium text-ink transition-colors hover:border-brand-300"
+        className="flex items-center gap-2 rounded-full border border-stone-300 bg-white py-1.5 pl-3 pr-1.5 text-sm font-semibold text-ink shadow-sm transition-shadow hover:shadow-md"
         aria-expanded={open}
         aria-haspopup="menu"
       >
-        <span className="hidden max-w-[8rem] truncate sm:inline">
-          {user.fullName.split(" ")[0]}
+        <Menu className="h-4 w-4 text-stone-600" aria-hidden />
+        <span
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-stone-500 text-xs font-bold text-white"
+          aria-hidden
+        >
+          {user.fullName.trim().charAt(0).toUpperCase()}
         </span>
-        <span className="rounded-md bg-stone-100 px-1.5 py-0.5 text-xs text-stone-600">
-          {roleLabel}
-        </span>
-        <ChevronDown className="h-4 w-4 text-stone-400" />
+        <span className="sr-only">{user.fullName}, {roleLabel}</span>
+        <ChevronDown className="hidden h-4 w-4 text-stone-400 sm:block" />
       </button>
 
       {open && (

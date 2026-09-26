@@ -15,19 +15,19 @@ export function AuthShell({ title, subtitle, children, footer }: Props) {
       <div className="mb-8 text-center">
         <Link
           to="/"
-          className="font-display text-lg font-semibold text-brand-700"
+          className="text-xl font-bold text-brand-600"
         >
           StaySphere
         </Link>
       </div>
-      <Card className="p-8">
-        <h1 className="font-display text-2xl font-semibold text-ink">
+      <Card className="border-stone-200 p-8 shadow-[0_6px_16px_rgba(0,0,0,0.06)]">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">
           {title}
         </h1>
         <p className="mt-2 text-sm text-muted">{subtitle}</p>
         <div className="mt-8">{children}</div>
         {footer && (
-          <div className="mt-6 border-t border-border pt-6 text-center text-sm text-muted">
+          <div className="mt-6 border-t border-stone-200 pt-6 text-center text-sm text-muted">
             {footer}
           </div>
         )}
