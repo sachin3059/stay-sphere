@@ -1,8 +1,19 @@
 spring:
   application:
     name: api-gateway
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
   cloud:
     gateway:
+      default-filters:
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: ${GATEWAY_RATE_LIMIT_REPLENISH:80}
+            redis-rate-limiter.burstCapacity: ${GATEWAY_RATE_LIMIT_BURST:160}
+            redis-rate-limiter.requestedTokens: 1
+            key-resolver: "#{@compositeRateLimitKeyResolver}"
       routes:
         - id: auth-service
           uri: http://auth-service:8081

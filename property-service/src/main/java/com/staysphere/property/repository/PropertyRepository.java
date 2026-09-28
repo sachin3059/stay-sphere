@@ -10,6 +10,9 @@ public interface PropertyRepository extends JpaRepository<Property, String> {
 
     List<Property> findByHostId(String hostId);
 
+    @Query("SELECT p.id FROM Property p WHERE p.status = 'ACTIVE'")
+    List<String> findAllActiveIds();
+
     List<Property> findByCityIgnoreCaseAndStatus(
             String city, Property.PropertyStatus status);
 

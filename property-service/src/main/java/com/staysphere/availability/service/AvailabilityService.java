@@ -1,11 +1,12 @@
 package com.staysphere.availability.service;
 
+import com.staysphere.availability.cache.AvailabilityCacheSupport;
+import com.staysphere.availability.cache.AvailabilityRangeCachePayload;
 import com.staysphere.availability.dto.*;
 import com.staysphere.availability.entity.BlockedDate;
 import com.staysphere.availability.repository.BlockedDateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
 public class AvailabilityService {
 
     private final BlockedDateRepository blockedDateRepository;
-    private final StringRedisTemplate redisTemplate;
+    private final AvailabilityCacheSupport availabilityCache;
 
     // ── Kafka consumer ──────────────────────────────────────────
 
@@ -75,10 +76,20 @@ public class AvailabilityService {
     public List<AvailableRangeResponse> getAvailableRanges(
             String propertyId, LocalDate from, LocalDate to) {
 
-        // Try cache first
-        String cacheKey = "availability:" + propertyId + ":" + from + ":" + to;
-        // (cache logic simplified — full Redis caching in production)
+        String cacheKey = availabilityCache.rangeKey(propertyId, from, to);
+        AvailabilityRangeCachePayload payload = availabilityCache.redis().getOrLoad(
+                cacheKey,
+                AvailabilityRangeCachePayload.class,
+                availabilityCache.rangeTtl(),
+                () -> new AvailabilityRangeCachePayload(
+                        computeAvailableRanges(propertyId, from, to)));
+        return payload.getRanges();
+    }
 
+    private List<AvailableRangeResponse> computeAvailableRanges(
+            String propertyId,
+            LocalDate from,
+            LocalDate to) {
         List<BlockedDate> blocked = blockedDateRepository
                 .findBlockedInRange(propertyId, from, to);
 
@@ -222,12 +233,7 @@ public class AvailabilityService {
     }
 
     private void invalidateCache(String propertyId) {
-        // Delete all Redis keys matching this property
-        Set<String> keys = redisTemplate.keys(
-                "availability:" + propertyId + ":*");
-        if (keys != null && !keys.isEmpty()) {
-            redisTemplate.delete(keys);
-        }
+        availabilityCache.bumpVersion(propertyId);
     }
 
     private BlockedDateResponse mapToResponse(BlockedDate b) {

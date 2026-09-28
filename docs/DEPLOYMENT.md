@@ -70,7 +70,7 @@ GitHub Actions runs `./gradlew build` and `frontend` `npm run build` on push/PR 
 
 ## Optional (not required for MVP)
 
-- **Rate limiting** on gateway (Redis) — backlog.
+- **Rate limiting** on gateway (Redis) — see `docs/CACHING.md` and `GATEWAY_RATE_LIMIT_*` in `env.template`.
 - **TLS** — terminate at reverse proxy (Caddy, nginx, cloud load balancer) in front of `web` or gateway.
 
 ## Acceptance checklist

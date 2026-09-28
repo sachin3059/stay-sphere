@@ -1,5 +1,6 @@
 package com.staysphere.pricing.service;
 
+import com.staysphere.common.exception.BadRequestException;
 import com.staysphere.common.exception.ResourceNotFoundException;
 import com.staysphere.pricing.dto.*;
 import com.staysphere.pricing.entity.PricingRule;
@@ -48,17 +49,27 @@ public class PricingService {
                 .findByPropertyIdAndStatus(
                         request.getPropertyId(),
                         PricingRule.RuleStatus.ACTIVE)
-                .orElseThrow(() -> new RuntimeException(
+                .orElseThrow(() -> new ResourceNotFoundException(
                         "No active pricing rule for property: "
                                 + request.getPropertyId()));
 
         long totalNights = ChronoUnit.DAYS.between(
                 request.getCheckIn(), request.getCheckOut());
 
-        if (totalNights < rule.getMinimumStay()) {
-            throw new RuntimeException(
-                    "Minimum stay is " + rule.getMinimumStay() + " nights");
+        int minimumStay = rule.getMinimumStay() != null ? rule.getMinimumStay() : 1;
+        if (totalNights < minimumStay) {
+            throw new BadRequestException(
+                    "Minimum stay is " + minimumStay + " nights");
         }
+
+        BigDecimal weekendMultiplier = rule.getWeekendMultiplier() != null
+                ? rule.getWeekendMultiplier() : BigDecimal.ONE;
+        BigDecimal peakSeasonMultiplier = rule.getPeakSeasonMultiplier() != null
+                ? rule.getPeakSeasonMultiplier() : BigDecimal.ONE;
+        BigDecimal longStayDiscount = rule.getLongStayDiscount() != null
+                ? rule.getLongStayDiscount() : BigDecimal.ONE;
+        int longStayThreshold = rule.getLongStayThresholdNights() != null
+                ? rule.getLongStayThresholdNights() : 7;
 
         List<String> appliedRules = new ArrayList<>();
         BigDecimal multiplier = BigDecimal.ONE;
@@ -66,31 +77,25 @@ public class PricingService {
         // Weekend multiplier — check if any night falls on Fri/Sat
         boolean hasWeekend = hasWeekendNight(
                 request.getCheckIn(), request.getCheckOut());
-        if (hasWeekend && rule.getWeekendMultiplier()
-                .compareTo(BigDecimal.ONE) > 0) {
-            multiplier = multiplier.multiply(rule.getWeekendMultiplier());
-            appliedRules.add("Weekend surcharge: ×"
-                    + rule.getWeekendMultiplier());
+        if (hasWeekend && weekendMultiplier.compareTo(BigDecimal.ONE) > 0) {
+            multiplier = multiplier.multiply(weekendMultiplier);
+            appliedRules.add("Weekend surcharge: ×" + weekendMultiplier);
         }
 
         // Peak season multiplier
         boolean isPeakSeason = isPeakSeason(
                 request.getCheckIn(), request.getCheckOut(),
                 rule.getPeakSeasonStart(), rule.getPeakSeasonEnd());
-        if (isPeakSeason && rule.getPeakSeasonMultiplier()
-                .compareTo(BigDecimal.ONE) > 0) {
-            multiplier = multiplier.multiply(rule.getPeakSeasonMultiplier());
-            appliedRules.add("Peak season surcharge: ×"
-                    + rule.getPeakSeasonMultiplier());
+        if (isPeakSeason && peakSeasonMultiplier.compareTo(BigDecimal.ONE) > 0) {
+            multiplier = multiplier.multiply(peakSeasonMultiplier);
+            appliedRules.add("Peak season surcharge: ×" + peakSeasonMultiplier);
         }
 
         // Long stay discount
-        if (totalNights >= rule.getLongStayThresholdNights()
-                && rule.getLongStayDiscount()
-                .compareTo(BigDecimal.ONE) < 0) {
-            multiplier = multiplier.multiply(rule.getLongStayDiscount());
-            appliedRules.add("Long stay discount: ×"
-                    + rule.getLongStayDiscount());
+        if (totalNights >= longStayThreshold
+                && longStayDiscount.compareTo(BigDecimal.ONE) < 0) {
+            multiplier = multiplier.multiply(longStayDiscount);
+            appliedRules.add("Long stay discount: ×" + longStayDiscount);
         }
 
         if (appliedRules.isEmpty()) {
@@ -115,9 +120,9 @@ public class PricingService {
                 .finalPricePerNight(finalPricePerNight)
                 .totalPrice(totalPrice)
                 .totalNights(totalNights)
-                .weekendMultiplier(rule.getWeekendMultiplier())
-                .peakSeasonMultiplier(rule.getPeakSeasonMultiplier())
-                .longStayDiscount(rule.getLongStayDiscount())
+                .weekendMultiplier(weekendMultiplier)
+                .peakSeasonMultiplier(peakSeasonMultiplier)
+                .longStayDiscount(longStayDiscount)
                 .appliedRules(appliedRules)
                 .build();
     }

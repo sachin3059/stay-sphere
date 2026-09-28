@@ -1,6 +1,9 @@
 package com.staysphere.property.service;
 
 import com.staysphere.common.exception.ResourceNotFoundException;
+import com.staysphere.property.cache.PropertyActiveBloomFilter;
+import com.staysphere.property.cache.PropertyCacheSupport;
+import com.staysphere.property.cache.PropertySearchCachePayload;
 import com.staysphere.property.dto.ImageUploadResponse;
 import com.staysphere.property.dto.PropertyRequest;
 import com.staysphere.property.dto.PropertyResponse;
@@ -28,6 +31,8 @@ public class PropertyService {
     private final PropertySearchRepository propertySearchRepository;
     private final PricingRuleRepository pricingRuleRepository;
     private final CloudinaryService cloudinaryService;
+    private final PropertyActiveBloomFilter propertyBloomFilter;
+    private final PropertyCacheSupport propertyCache;
 
     public PropertyResponse createProperty(PropertyRequest request, String hostId) {
         Property property = Property.builder()
@@ -50,13 +55,22 @@ public class PropertyService {
                 .build();
 
         Property saved = propertyRepository.save(property);
+        propertyBloomFilter.onPropertyActivated(saved.getId());
+        propertyCache.bumpSearchGeneration();
         return mapToResponse(saved);
     }
 
     public PropertyResponse getProperty(String id) {
-        Property property = propertyRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
-        return mapToResponse(property);
+        if (!propertyBloomFilter.mightBeActive(id)) {
+            throw new ResourceNotFoundException("Property not found");
+        }
+
+        String cacheKey = propertyCache.detailKey(id);
+        return propertyCache.redis().getOrLoad(
+                cacheKey,
+                PropertyResponse.class,
+                propertyCache.detailTtl(),
+                () -> loadActivePropertyFromDb(id));
     }
 
     public List<PropertyResponse> getHostProperties(String hostId) {
@@ -68,23 +82,39 @@ public class PropertyService {
     public List<PropertyResponse> searchProperties(
             String city, int guests,
             BigDecimal minPrice, BigDecimal maxPrice) {
-        return propertyRepository.searchProperties(city, guests, minPrice, maxPrice)
-                .stream().map(this::mapToResponse)
-                .collect(Collectors.toList());
+        String cacheKey = propertyCache.searchKey(null, city, guests, minPrice, maxPrice);
+        PropertySearchCachePayload payload = propertyCache.redis().getOrLoad(
+                cacheKey,
+                PropertySearchCachePayload.class,
+                propertyCache.searchTtl(),
+                () -> new PropertySearchCachePayload(
+                        propertyRepository.searchProperties(city, guests, minPrice, maxPrice)
+                                .stream()
+                                .map(this::mapToResponse)
+                                .collect(Collectors.toList())));
+        return payload.getItems();
     }
 
     public List<PropertyResponse> searchWithPostgres(
             String query, String city, Integer guests,
             BigDecimal minPrice, BigDecimal maxPrice) {
-        return propertySearchRepository.search(
-                        blankToNull(query),
-                        blankToNull(city),
-                        guests,
-                        minPrice,
-                        maxPrice)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        String cacheKey = propertyCache.searchKey(
+                query, city, guests, minPrice, maxPrice);
+        PropertySearchCachePayload payload = propertyCache.redis().getOrLoad(
+                cacheKey,
+                PropertySearchCachePayload.class,
+                propertyCache.searchTtl(),
+                () -> new PropertySearchCachePayload(
+                        propertySearchRepository.search(
+                                        blankToNull(query),
+                                        blankToNull(city),
+                                        guests,
+                                        minPrice,
+                                        maxPrice)
+                                .stream()
+                                .map(this::mapToResponse)
+                                .collect(Collectors.toList())));
+        return payload.getItems();
     }
 
     public List<PropertyResponse> getAllProperties() {
@@ -113,7 +143,9 @@ public class PropertyService {
                         new ResourceNotFoundException("Property not found"));
         property.setStatus(Property.PropertyStatus.valueOf(
                 status.trim().toUpperCase()));
-        return mapToResponse(propertyRepository.save(property));
+        Property saved = propertyRepository.save(property);
+        onListingCatalogChanged(propertyId, saved.getStatus());
+        return mapToResponse(saved);
     }
 
     public PropertyResponse updateProperty(
@@ -147,6 +179,8 @@ public class PropertyService {
 
         Property saved = propertyRepository.save(property);
         syncPricingBasePrice(propertyId, request.getPricePerNight());
+        propertyCache.evictDetail(propertyId);
+        propertyCache.bumpSearchGeneration();
         return mapToResponse(saved);
     }
 
@@ -163,7 +197,9 @@ public class PropertyService {
                     "Only ACTIVE or INACTIVE status is allowed");
         }
         property.setStatus(next);
-        return mapToResponse(propertyRepository.save(property));
+        Property saved = propertyRepository.save(property);
+        onListingCatalogChanged(propertyId, saved.getStatus());
+        return mapToResponse(saved);
     }
 
     public PropertyResponse removePropertyImage(
@@ -181,7 +217,9 @@ public class PropertyService {
             log.warn("Skipping Cloudinary delete for url: {}", imageUrl);
         }
         property.getImageUrls().remove(imageUrl);
-        return mapToResponse(propertyRepository.save(property));
+        Property saved = propertyRepository.save(property);
+        propertyCache.evictDetail(propertyId);
+        return mapToResponse(saved);
     }
 
     private Property loadHostProperty(String propertyId, String hostId) {
@@ -193,6 +231,27 @@ public class PropertyService {
                     "Not authorized to modify this property");
         }
         return property;
+    }
+
+    private PropertyResponse loadActivePropertyFromDb(String id) {
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found"));
+        if (property.getStatus() != Property.PropertyStatus.ACTIVE) {
+            throw new ResourceNotFoundException("Property not found");
+        }
+        return mapToResponse(property);
+    }
+
+    private void onListingCatalogChanged(
+            String propertyId,
+            Property.PropertyStatus status) {
+        propertyCache.evictDetail(propertyId);
+        propertyCache.bumpSearchGeneration();
+        if (status == Property.PropertyStatus.ACTIVE) {
+            propertyBloomFilter.onPropertyActivated(propertyId);
+        } else {
+            propertyBloomFilter.rebuild();
+        }
     }
 
     private void syncPricingBasePrice(String propertyId, BigDecimal basePrice) {
@@ -230,6 +289,7 @@ public class PropertyService {
         }
         property.getImageUrls().addAll(urls);
         propertyRepository.save(property);
+        propertyCache.evictDetail(propertyId);
 
         log.info("Uploaded {} images for property {}", urls.size(), propertyId);
 

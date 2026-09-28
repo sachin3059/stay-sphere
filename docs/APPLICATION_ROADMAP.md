@@ -34,7 +34,7 @@ Use this as the **default order of work** (one slice at a time, commit when stab
 
 ## Part B — Remaining work (build in this order)
 
-### Phase 19 — Production deployment ← **current**
+### Phase 19 — Production deployment
 
 **Goal:** Runnable outside localhost. Guide: **`docs/DEPLOYMENT.md`**.
 
@@ -44,10 +44,24 @@ Use this as the **default order of work** (one slice at a time, commit when stab
 | 19.2 | Env matrix: gateway CORS, JWT, Stripe, Cloudinary | Ops | `env.template`, `DEPLOYMENT.md` |
 | 19.3 | Stripe webhooks on public URL | Ops | Documented; configure on your host |
 | 19.4 | CI: backend tests + frontend build | CI | `.github/workflows/ci.yml` |
-| 19.5 | Rate limiting / API versioning | Backend | Optional backlog |
+| 19.5 | Rate limiting / API versioning | Backend | Rate limit shipped (Phase 20); versioning backlog |
 | 19.6 | Real email (SendGrid) | Backend | Wired; skips send when key unset |
 
 **Acceptance:** Staging URL completes register → book → pay → confirm (you run deploy + Stripe webhook on your domain).
+
+---
+
+### Phase 20 — Caching & protection ← **current**
+
+**Goal:** Reduce Postgres load and mitigate cache penetration. Guide: **`docs/CACHING.md`**.
+
+| # | Change | Layer | Status |
+|---|--------|--------|--------|
+| 20.1 | Redis JSON cache-aside + jitter + lock | `common` | `RedisJsonCache` |
+| 20.2 | Property detail + search cache | property-service | Shipped |
+| 20.3 | Bloom filter for active property IDs | property-service | Guava, rebuild on unlist |
+| 20.4 | Availability range cache + version invalidation | property-service | No `KEYS` scan |
+| 20.5 | Gateway rate limiting (Redis token bucket) | api-gateway | `RequestRateLimiter` |
 
 ---
 
@@ -87,6 +101,8 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 - [x] Payment intents + confirm sync
 - [x] Event-driven booking confirm
 - [x] Token refresh in web client
+- [x] Read caching + Bloom filter on listings (`docs/CACHING.md`)
+- [x] Gateway rate limiting (Redis)
 - [ ] Webhooks in deployed env (configure per `DEPLOYMENT.md`)
 - [x] Admin (users, listing moderation)
 - [ ] Email / deploy webhooks (Phase 19)
@@ -100,7 +116,7 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 3. Update checkboxes in Part C when a capability ships.
 4. Keep `frontend/README.md` “Build order” in sync with the phase number for day-to-day dev.
 
-**Current focus:** **Phase 19 — Production deploy**.
+**Current focus:** **Phase 19 deploy ops** (Stripe webhook, SendGrid); **Phase 20 caching** code shipped.
 
 **Deferred from Phase 17:** forgot password / email verification (SendGrid); ChatGPT sign-in.
 
