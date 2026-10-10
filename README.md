@@ -368,14 +368,14 @@ cd stay-sphere
 Or manually (build JARs once on your PC, then start Docker — avoids Gradle downloads inside Docker):
 
 ```bash
-./gradlew bootJar -x test
+cd backend && ./gradlew bootJar -x test && cd ..
 docker compose up -d --build
 ```
 
 Requires **Docker Desktop running** and **JDK 21**. Ensure repo-root `.env` exists.
 
 This starts:
-- PostgreSQL on port 5432
+- PostgreSQL in Docker (host port **5433** by default; internal `postgres:5432`)
 - Redis on port 6379
 - Apache Kafka on port 9092
 - Zookeeper on port 2181
@@ -425,38 +425,31 @@ Open a separate terminal for each service or use IntelliJ's run configurations.
 ### Option A — Run individually (recommended for development)
 
 ```bash
+cd backend
+
 # Terminal 1 — Auth Service
 ./gradlew :auth-service:bootRun
 
-# Terminal 2 — Property Service
+# Terminal 2 — Property Service (listings, search, availability, pricing)
 ./gradlew :property-service:bootRun
 
-# Terminal 3 — Booking Service
+# Terminal 3 — Booking Service (includes waitlist)
 ./gradlew :booking-service:bootRun
 
 # Terminal 4 — Payment Service
 ./gradlew :payment-service:bootRun
 
-# Terminal 5 — Pricing Service
-./gradlew :pricing-service:bootRun
-
-# Terminal 6 — Waitlist Service
-./gradlew :waitlist-service:bootRun
-
-# Terminal 7 — Notification Service
+# Terminal 5 — Notification Service
 ./gradlew :notification-service:bootRun
 
-# Terminal 8 — Availability Service
-./gradlew :availability-service:bootRun
-
-# Terminal 9 — API Gateway (start last)
+# Terminal 6 — API Gateway (start last)
 ./gradlew :api-gateway:bootRun
 ```
 
 ### Option B — Build all services
 
 ```bash
-./gradlew build -x test
+cd backend && ./gradlew build -x test
 ```
 
 ### Verify services are running
@@ -711,64 +704,26 @@ All should return `{service-name} service is running`.
 
 ```
 stay-sphere/
-├── api-gateway/
-│   └── src/main/java/com/staysphere/gateway/
-│       ├── config/          # JWT config
-│       ├── filter/          # JWT authentication filter
-│       └── controller/      # Fallback controller
-├── auth-service/
-│   └── src/main/java/com/staysphere/auth/
-│       ├── entity/          # User, RefreshToken
-│       ├── repository/      # UserRepository
-│       ├── dto/             # Request/Response DTOs
-│       ├── security/        # JWT filter, config
-│       ├── service/         # AuthService, RefreshTokenService
-│       └── controller/      # AuthController
-├── property-service/
-│   └── src/main/java/com/staysphere/property/
-│       ├── entity/          # Property, Availability, Pricing entities
-│       ├── repository/      # JPA + Postgres FTS search
-│       ├── service/         # PropertyService, CloudinaryService
-│       └── controller/      # PropertyController
-├── booking-service/
-│   └── src/main/java/com/staysphere/booking/
-│       ├── entity/          # Booking (@Version optimistic lock)
-│       ├── service/         # BookingService, RedisLockService
-│       └── controller/      # BookingController
-├── payment-service/
-│   └── src/main/java/com/staysphere/payment/
-│       ├── entity/          # Payment (idempotency key, @Version)
-│       ├── service/         # PaymentService (idempotency check)
-│       └── controller/      # PaymentController
-├── pricing-service/
-│   └── src/main/java/com/staysphere/pricing/
-│       ├── entity/          # PricingRule
-│       ├── service/         # PricingService (dynamic engine)
-│       └── controller/      # PricingController
-├── waitlist-service/
-│   └── src/main/java/com/staysphere/waitlist/
-│       ├── entity/          # WaitlistEntry
-│       ├── service/         # WaitlistService (@KafkaListener, @Scheduled)
-│       └── controller/      # WaitlistController
-├── notification-service/
-│   └── src/main/java/com/staysphere/notification/
-│       ├── entity/          # Notification
-│       ├── service/         # NotificationService (@KafkaListener), EmailService
-│       └── controller/      # NotificationController
-├── availability-service/
-│   └── src/main/java/com/staysphere/availability/
-│       ├── entity/          # BlockedDate
-│       ├── service/         # AvailabilityService (interval merge, @KafkaListener)
-│       └── controller/      # AvailabilityController
-├── common/
-│   └── src/main/java/com/staysphere/common/
-│       ├── ApiResponse.java
-│       ├── ErrorResponse.java
-│       └── GlobalExceptionHandler.java
-├── docker-compose.yml
-├── build.gradle              # Root build — shared dependencies
-└── settings.gradle           # Module declarations
+├── frontend/                 # React SPA (Vite)
+├── backend/                  # Gradle multi-project — all JVM services
+│   ├── common/
+│   ├── api-gateway/
+│   ├── auth-service/
+│   ├── property-service/     # listings, search, availability, pricing
+│   ├── booking-service/      # bookings + waitlist
+│   ├── payment-service/
+│   ├── notification-service/
+│   ├── build.gradle
+│   └── settings.gradle
+├── docs/                     # ADRs, deployment, roadmap
+├── scripts/                  # start-backend, demo seed
+├── .github/workflows/        # CI (backend + frontend)
+├── docker-compose.yml        # full stack (infra + backend + web)
+├── env.template              # copy to .env at repo root
+└── README.md
 ```
+
+Service boundaries (six deployables): [docs/adr/003-service-boundaries.md](docs/adr/003-service-boundaries.md).
 
 ---
 

@@ -8,8 +8,8 @@ if ! docker info >/dev/null 2>&1; then
 fi
 
 echo "Building Spring Boot JARs (one Gradle run on your machine)..."
-chmod +x gradlew
-./gradlew bootJar -x test --no-daemon
+chmod +x backend/gradlew
+./backend/gradlew bootJar -x test --no-daemon
 
 echo "Starting containers..."
 docker compose up -d --build

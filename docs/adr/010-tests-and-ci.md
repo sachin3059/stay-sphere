@@ -2,7 +2,7 @@
 
 ## Decision
 
-- GitHub Actions workflow runs `./gradlew build` on push/PR to `main`.
+- GitHub Actions workflow runs `./gradlew build` in `backend/` on push/PR to `main`.
 - Start with a focused unit test in `booking-service` for date overlap logic; expand with Testcontainers later.
 
 ## Rationale

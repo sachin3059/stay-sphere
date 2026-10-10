@@ -13,7 +13,7 @@ The API gateway at **`:8080`** is the single entry point for a browser or mobile
 | **Payments** | Stripe PaymentIntents + checkout page + confirm sync |
 | **Events** | Kafka outbox, payment_success → booking confirmed |
 | **Ops** | Actuator health, correlation id, Flyway per service |
-| **E2E** | `.\scripts\stripe-e2e.ps1` (no Postgres SQL for host role) |
+| **E2E** | Manual flows via **frontend** at `http://localhost:5173` (gateway `:8080`) |
 
 ## Client contract
 
@@ -34,5 +34,5 @@ The API gateway at **`:8080`** is the single entry point for a browser or mobile
 
 ```powershell
 .\scripts\start-backend.ps1   # or docker compose up after bootJar
-.\scripts\stripe-e2e.ps1
+cd frontend && npm run dev    # register, host, book, pay in the UI
 ```

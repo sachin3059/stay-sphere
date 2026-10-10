@@ -7,4 +7,4 @@
 4. Check notification logs and availability calendar block from `booking_confirmed`.
 5. Optional: `curl -H "X-Correlation-Id: demo-1" …` through the gateway and grep logs for the same id.
 6. **Stripe test checkout:** set keys in `.env` (`PAYMENT_GATEWAY=stripe`), open `/api/payments/checkout` — see [STRIPE.md](STRIPE.md).
-7. Run `./gradlew :booking-service:test` or full `./gradlew build`.
+7. Run `cd backend && ./gradlew :booking-service:test` or full `./gradlew build`.

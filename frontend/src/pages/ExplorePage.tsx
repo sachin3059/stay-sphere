@@ -120,7 +120,7 @@ export function ExplorePage() {
             </li>
           ))}
         </ul>
-      ) : items.length > 0 ? (
+      ) : errorMessage ? null : items.length > 0 ? (
         <>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 pb-4">
             <p className="text-sm font-medium text-ink">

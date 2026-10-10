@@ -66,7 +66,7 @@ Set `SENDGRID_API_KEY` and a verified `SENDGRID_FROM_EMAIL`. Without a key, noti
 
 ## CI
 
-GitHub Actions runs `./gradlew build` and `frontend` `npm run build` on push/PR to `main`.
+GitHub Actions runs `./gradlew build` in `backend/` and `npm run build` in `frontend/` on push/PR to `main`.
 
 ## Optional (not required for MVP)
 

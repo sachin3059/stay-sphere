@@ -5,6 +5,7 @@ import com.staysphere.property.search.PropertySearchSort;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+import org.hibernate.query.NativeQuery;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -23,13 +24,13 @@ public class PropertySearchRepositoryImpl implements PropertySearchRepositoryCus
               AND (:query IS NULL OR p.search_vector @@ plainto_tsquery('english', :query)
                    OR p.title % :query)
               AND (
-                CAST(:checkIn AS date) IS NULL
-                OR CAST(:checkOut AS date) IS NULL
+                :checkIn IS NULL
+                OR :checkOut IS NULL
                 OR NOT EXISTS (
                   SELECT 1 FROM blocked_dates b
                   WHERE b.property_id = p.id
-                    AND b.start_date <= CAST(:checkOut AS date)
-                    AND b.end_date >= CAST(:checkIn AS date)
+                    AND b.start_date <= :checkOut
+                    AND b.end_date >= :checkIn
                 )
               )
             """;
@@ -79,12 +80,20 @@ public class PropertySearchRepositoryImpl implements PropertySearchRepositoryCus
             BigDecimal maxPrice,
             LocalDate checkIn,
             LocalDate checkOut) {
-        q.setParameter("query", query);
-        q.setParameter("city", city);
-        q.setParameter("guests", guests);
-        q.setParameter("minPrice", minPrice);
-        q.setParameter("maxPrice", maxPrice);
-        q.setParameter("checkIn", checkIn);
-        q.setParameter("checkOut", checkOut);
+        NativeQuery<?> nq = q.unwrap(NativeQuery.class);
+        nq.setParameter("query", blankToNull(query), String.class);
+        nq.setParameter("city", blankToNull(city), String.class);
+        nq.setParameter("guests", guests, Integer.class);
+        nq.setParameter("minPrice", minPrice, BigDecimal.class);
+        nq.setParameter("maxPrice", maxPrice, BigDecimal.class);
+        nq.setParameter("checkIn", checkIn, LocalDate.class);
+        nq.setParameter("checkOut", checkOut, LocalDate.class);
+    }
+
+    private static String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value;
     }
 }

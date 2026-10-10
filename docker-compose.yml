@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -65,7 +65,7 @@ services:
 
   auth-service:
     build:
-      context: .
+      context: ./backend
       dockerfile: auth-service/Dockerfile
     container_name: staysphere-auth
     env_file: .env
@@ -84,7 +84,7 @@ services:
 
   property-service:
     build:
-      context: .
+      context: ./backend
       dockerfile: property-service/Dockerfile
     container_name: staysphere-property
     env_file: .env
@@ -106,7 +106,7 @@ services:
 
   booking-service:
     build:
-      context: .
+      context: ./backend
       dockerfile: booking-service/Dockerfile
     container_name: staysphere-booking
     env_file: .env
@@ -131,7 +131,7 @@ services:
 
   payment-service:
     build:
-      context: .
+      context: ./backend
       dockerfile: payment-service/Dockerfile
     container_name: staysphere-payment
     env_file: .env
@@ -156,7 +156,7 @@ services:
 
   notification-service:
     build:
-      context: .
+      context: ./backend
       dockerfile: notification-service/Dockerfile
     container_name: staysphere-notification
     env_file: .env
@@ -178,7 +178,7 @@ services:
 
   api-gateway:
     build:
-      context: .
+      context: ./backend
       dockerfile: api-gateway/Dockerfile
     container_name: staysphere-gateway
     env_file: .env
