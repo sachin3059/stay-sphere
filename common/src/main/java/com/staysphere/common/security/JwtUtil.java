@@ -22,13 +22,26 @@ public class JwtUtil {
     }
 
     public String generateToken(String email, String role) {
+        return generateToken(email, role, true);
+    }
+
+    public String generateToken(String email, String role, boolean emailVerified) {
         return Jwts.builder()
                 .subject(email)
                 .claim("role", role)
+                .claim("emailVerified", emailVerified)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())
                 .compact();
+    }
+
+    /**
+     * Missing claim is treated as verified for tokens issued before email verification shipped.
+     */
+    public boolean extractEmailVerified(String token) {
+        Boolean value = parseClaims(token).get("emailVerified", Boolean.class);
+        return value == null || value;
     }
 
     public String extractEmail(String token) {

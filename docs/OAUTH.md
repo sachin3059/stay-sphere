@@ -52,7 +52,16 @@ OAuth-only users have no password; they must use social sign-in.
 
 See `docs/EXTENDED_FEATURES.md` (Phase F1).
 
+## Email verification
+
+- Sent on email/password **register**; OAuth accounts are marked verified at sign-in.
+- `POST /api/auth/verify-email` with `{ "token": "..." }` → new JWT with `emailVerified: true`
+- `POST /api/auth/resend-verification` (Bearer) for logged-in unverified users
+- Web: `/check-email`, `/verify-email?token=...`
+- **Booking** requires verified email (`booking-service` checks JWT claim).
+
+See `docs/EXTENDED_FEATURES.md` (Phase F2).
+
 ## Not implemented
 
-- Email verification (Phase F2)
 - ChatGPT sign-in

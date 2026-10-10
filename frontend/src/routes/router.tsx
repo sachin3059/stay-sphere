@@ -24,7 +24,9 @@ import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
 import { AdminListingsPage } from "@/pages/admin/AdminListingsPage";
 import { AdminUsersPage } from "@/pages/admin/AdminUsersPage";
 import { GitHubOAuthCallbackPage } from "@/pages/GitHubOAuthCallbackPage";
+import { CheckEmailPage } from "@/pages/CheckEmailPage";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
+import { VerifyEmailPage } from "@/pages/VerifyEmailPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { ProfilePage } from "@/pages/ProfilePage";
@@ -193,6 +195,14 @@ export const router = createBrowserRouter([
             <ResetPasswordPage />
           </GuestOnlyRoute>
         ),
+      },
+      {
+        path: "/check-email",
+        element: <CheckEmailPage />,
+      },
+      {
+        path: "/verify-email",
+        element: <VerifyEmailPage />,
       },
       {
         path: "/register",

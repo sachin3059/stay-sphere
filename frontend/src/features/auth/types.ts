@@ -8,6 +8,7 @@ export type AuthResponseData = {
   fullName: string;
   accessTokenExpiry?: number;
   refreshTokenExpiry?: number;
+  emailVerified?: boolean;
 };
 
 export type LoginPayload = {

@@ -38,14 +38,15 @@ OAuth-only accounts (no password) are ignored silently; API still returns succes
 
 ---
 
-## Phase F2 — Email verification (planned)
+## Phase F2 — Email verification ✅
 
-| Layer | Planned location |
-|-------|------------------|
-| DB | `users.email_verified_at`, `email_verification_tokens` (auth-service) |
-| API | `POST /api/auth/verify-email`, resend; optional gate on book until verified |
-| Email | Reuse `AuthEmailService` |
-| Web | Verify page + banner on login |
+| Layer | Location |
+|-------|----------|
+| DB | `V4__email_verification.sql` — `users.email_verified_at`, `email_verification_tokens` |
+| API | `POST /api/auth/verify-email`, `POST /api/auth/resend-verification` (JWT) |
+| JWT | `emailVerified` claim in `JwtUtil`; booking create checks it |
+| Email | `AuthEmailService.sendVerificationEmail` |
+| Web | `/check-email`, `/verify-email?token=…`, banner, profile status |
 
 ---
 

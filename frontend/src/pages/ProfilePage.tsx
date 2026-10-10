@@ -25,7 +25,21 @@ export function ProfilePage() {
           </div>
           <div>
             <dt className="text-muted">Email</dt>
-            <dd className="mt-1 font-medium text-ink">{user.email}</dd>
+            <dd className="mt-1 font-medium text-ink">
+              {user.email}
+              {(user.emailVerified ?? true) ? (
+                <span className="ml-2 text-xs font-normal text-brand-700">
+                  Verified
+                </span>
+              ) : (
+                <span className="ml-2 text-xs font-normal text-amber-800">
+                  Not verified —{" "}
+                  <Link to="/check-email" className="underline">
+                    verify now
+                  </Link>
+                </span>
+              )}
+            </dd>
           </div>
           <div>
             <dt className="text-muted">Role</dt>

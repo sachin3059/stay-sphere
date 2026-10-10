@@ -3,6 +3,9 @@ package com.staysphere.booking.controller;
 import com.staysphere.booking.dto.BookingRequest;
 import com.staysphere.booking.dto.BookingResponse;
 import com.staysphere.booking.service.BookingService;
+import com.staysphere.common.exception.BadRequestException;
+import com.staysphere.common.security.JwtUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +20,19 @@ import java.util.List;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final JwtUtil jwtUtil;
+
+    private void requireVerifiedEmail(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return;
+        }
+        String token = authHeader.substring(7);
+        if (!jwtUtil.extractEmailVerified(token)) {
+            throw new BadRequestException(
+                    "Verify your email before creating a booking.");
+        }
+    }
 
     private String getCurrentUserId() {
         return SecurityContextHolder.getContext()
@@ -25,8 +41,10 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<BookingResponse> createBooking(
+            HttpServletRequest httpRequest,
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @Valid @RequestBody BookingRequest request) {
+        requireVerifiedEmail(httpRequest);
         return ResponseEntity.ok(
                 bookingService.createBooking(request, getCurrentUserId(), idempotencyKey));
     }

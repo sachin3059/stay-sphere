@@ -20,7 +20,7 @@ export function RegisterPage() {
     mutationFn: registerRequest,
     onSuccess: (data) => {
       applyAuthResponse(data);
-      navigate("/", { replace: true });
+      navigate(data.emailVerified ? "/" : "/check-email", { replace: true });
     },
     onError: (err: unknown) => {
       if (err instanceof ApiError) {

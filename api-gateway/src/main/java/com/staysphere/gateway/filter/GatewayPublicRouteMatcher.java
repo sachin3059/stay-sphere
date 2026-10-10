@@ -21,6 +21,7 @@ public class GatewayPublicRouteMatcher {
             new Route(HttpMethod.POST, "/api/auth/oauth/github"),
             new Route(HttpMethod.POST, "/api/auth/forgot-password"),
             new Route(HttpMethod.POST, "/api/auth/reset-password"),
+            new Route(HttpMethod.POST, "/api/auth/verify-email"),
             new Route(HttpMethod.GET, "/api/auth/health"),
             new Route(HttpMethod.GET, "/api/properties/health"),
             new Route(HttpMethod.GET, "/api/properties/search"),

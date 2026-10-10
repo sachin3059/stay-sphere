@@ -36,6 +36,9 @@ staysphere:
     password-reset:
       frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
       token-ttl-minutes: 60
+    email-verification:
+      frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+      token-ttl-hours: 48
 sendgrid:
   api-key: ${SENDGRID_API_KEY:}
   from-email: ${SENDGRID_FROM_EMAIL:noreply@staysphere.local}

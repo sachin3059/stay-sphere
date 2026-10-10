@@ -8,5 +8,6 @@ export function applyAuthResponse(data: AuthResponseData) {
     email: data.email,
     fullName: data.fullName,
     role: data.role,
+    emailVerified: data.emailVerified ?? true,
   });
 }

@@ -7,6 +7,7 @@ export type AuthUser = {
   email: string;
   fullName: string;
   role: UserRole;
+  emailVerified: boolean;
 };
 
 type AuthState = {
@@ -19,6 +20,7 @@ type AuthState = {
     email: string;
     fullName: string;
     role: UserRole;
+    emailVerified?: boolean;
   }) => void;
   clearSession: () => void;
   isAuthenticated: () => boolean;
@@ -36,11 +38,12 @@ export const useAuthStore = create<AuthState>()(
         email,
         fullName,
         role,
+        emailVerified = true,
       }) =>
         set({
           accessToken,
           refreshToken,
-          user: { email, fullName, role },
+          user: { email, fullName, role, emailVerified },
         }),
       clearSession: () =>
         set({ accessToken: null, refreshToken: null, user: null }),

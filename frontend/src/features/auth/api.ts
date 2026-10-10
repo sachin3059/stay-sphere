@@ -60,3 +60,17 @@ export async function resetPasswordRequest(payload: {
     body: payload,
   });
 }
+
+export async function verifyEmailRequest(token: string) {
+  return apiData<import("./types").AuthResponseData>("/api/auth/verify-email", {
+    method: "POST",
+    body: { token },
+  });
+}
+
+export async function resendVerificationRequest(accessToken: string) {
+  return apiData<string>("/api/auth/resend-verification", {
+    method: "POST",
+    token: accessToken,
+  });
+}

@@ -70,4 +70,53 @@ public class AuthEmailService {
             log.error("Failed to send password reset email to {}: {}", to, e.getMessage());
         }
     }
+
+    public void sendVerificationEmail(String to, String verifyUrl) {
+        String subject = "Verify your StaySphere email";
+        String body = """
+                Welcome to StaySphere!
+
+                Confirm your email address by opening this link:
+                %s
+
+                If you did not create an account, you can ignore this email.
+                """.formatted(verifyUrl);
+
+        if (apiKey == null || apiKey.isBlank()) {
+            log.info(
+                    "SendGrid not configured; email verification link for {}: {}",
+                    to,
+                    verifyUrl);
+            return;
+        }
+
+        sendPlainText(to, subject, body);
+    }
+
+    private void sendPlainText(String to, String subject, String body) {
+        try {
+            Email from = new Email(fromEmail, fromName);
+            Email toEmail = new Email(to);
+            Content content = new Content("text/plain", body);
+            Mail mail = new Mail(from, subject, toEmail, content);
+
+            SendGrid sg = new SendGrid(apiKey);
+            Request request = new Request();
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+
+            Response response = sg.api(request);
+            if (response.getStatusCode() >= 200 && response.getStatusCode() < 300) {
+                log.info("Email sent to {}", to);
+            } else {
+                log.error(
+                        "SendGrid error {}: {}",
+                        response.getStatusCode(),
+                        response.getBody());
+            }
+        } catch (IOException e) {
+            log.error("Failed to send email to {}: {}", to, e.getMessage());
+        }
+    }
 }

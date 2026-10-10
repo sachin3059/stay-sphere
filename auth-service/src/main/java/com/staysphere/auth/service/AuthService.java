@@ -17,6 +17,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -28,6 +30,7 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final GoogleOAuthService googleOAuthService;
     private final GitHubOAuthService gitHubOAuthService;
+    private final EmailVerificationService emailVerificationService;
 
     private static final long ACCESS_TOKEN_EXPIRY = 900000;
     private static final long REFRESH_TOKEN_EXPIRY = 604800000;
@@ -65,7 +68,12 @@ public class AuthService {
                 .build();
 
         User saved = userRepository.save(user);
+        emailVerificationService.sendVerificationEmail(saved);
         return issueTokens(saved);
+    }
+
+    public AuthResponse issueTokensForUser(User user) {
+        return issueTokens(user);
     }
 
     @Transactional
@@ -183,6 +191,7 @@ public class AuthService {
             if (existing.getFullName() == null || existing.getFullName().isBlank()) {
                 existing.setFullName(fullName);
             }
+            markEmailVerifiedByOAuthProvider(existing);
             return userRepository.save(existing);
         }).orElseGet(() -> userRepository.save(User.builder()
                 .email(email)
@@ -190,12 +199,21 @@ public class AuthService {
                 .role(User.Role.GUEST)
                 .googleSub(googleSub)
                 .githubId(githubId)
+                .emailVerifiedAt(LocalDateTime.now())
                 .build()));
+    }
+
+    private void markEmailVerifiedByOAuthProvider(User user) {
+        if (!user.isEmailVerified()) {
+            user.setEmailVerifiedAt(LocalDateTime.now());
+        }
     }
 
     private AuthResponse issueTokens(User user) {
         String accessToken = jwtUtil.generateToken(
-                user.getEmail(), user.getRole().name());
+                user.getEmail(),
+                user.getRole().name(),
+                user.isEmailVerified());
         RefreshToken refreshToken = refreshTokenService
                 .createRefreshToken(user.getId(), user.getEmail());
 
@@ -207,6 +225,7 @@ public class AuthService {
                 .fullName(user.getFullName())
                 .accessTokenExpiry(ACCESS_TOKEN_EXPIRY)
                 .refreshTokenExpiry(REFRESH_TOKEN_EXPIRY)
+                .emailVerified(user.isEmailVerified())
                 .build();
     }
 }

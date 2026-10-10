@@ -19,4 +19,5 @@ public class AuthResponse {
     private String fullName;
     private long accessTokenExpiry;
     private long refreshTokenExpiry;
+    private boolean emailVerified;
 }

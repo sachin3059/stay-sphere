@@ -8,7 +8,9 @@ import com.staysphere.auth.dto.ForgotPasswordRequest;
 import com.staysphere.auth.dto.RefreshTokenRequest;
 import com.staysphere.auth.dto.RegisterRequest;
 import com.staysphere.auth.dto.ResetPasswordRequest;
+import com.staysphere.auth.dto.VerifyEmailRequest;
 import com.staysphere.auth.service.AuthService;
+import com.staysphere.auth.service.EmailVerificationService;
 import com.staysphere.auth.service.PasswordResetService;
 import com.staysphere.common.ApiResponse;
 import com.staysphere.common.security.TokenDenylistService;
@@ -25,6 +27,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
+    private final EmailVerificationService emailVerificationService;
     private final TokenDenylistService tokenDenylistService;
 
     @Value("${jwt.expiration:900000}")
@@ -78,6 +81,24 @@ public class AuthController {
         return ResponseEntity.ok(
                 ApiResponse.success("Upgraded to host",
                         authService.becomeHost(email)));
+    }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<ApiResponse<AuthResponse>> verifyEmail(
+            @RequestBody VerifyEmailRequest request) {
+        var user = emailVerificationService.verifyEmail(request.getToken());
+        return ResponseEntity.ok(ApiResponse.success(
+                "Email verified",
+                authService.issueTokensForUser(user)));
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<ApiResponse<String>> resendVerification() {
+        String email = SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        emailVerificationService.resendForEmail(email);
+        return ResponseEntity.ok(ApiResponse.success(
+                "Verification email sent if your account requires it."));
     }
 
     @PostMapping("/forgot-password")
