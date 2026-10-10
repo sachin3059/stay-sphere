@@ -45,7 +45,7 @@ Use this as the **default order of work** (one slice at a time, commit when stab
 | 19.3 | Stripe webhooks on public URL | Ops | Documented; configure on your host |
 | 19.4 | CI: backend tests + frontend build | CI | `.github/workflows/ci.yml` |
 | 19.5 | Rate limiting / API versioning | Backend | Rate limit shipped (Phase 20); versioning backlog |
-| 19.6 | Real email (SendGrid) | Backend | Wired; skips send when key unset |
+| 19.6 | Real email (SMTP / Brevo) | Backend | Wired; skips send when SMTP unset |
 
 **Acceptance:** Staging URL completes register → book → pay → confirm (you run deploy + Stripe webhook on your domain).
 
@@ -116,7 +116,7 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 3. Update checkboxes in Part C when a capability ships.
 4. Keep `frontend/README.md` “Build order” in sync with the phase number for day-to-day dev.
 
-**Current focus:** **Phase 19 deploy ops** (Stripe webhook, SendGrid); **Phase 20 caching** code shipped.
+**Current focus:** **Phase 19 deploy ops** (Stripe webhook, SMTP email); **Phase 20 caching** code shipped.
 
 **Extended features (see `docs/EXTENDED_FEATURES.md`):** F1–F3, F5 shipped; F4 skipped for now; F6–F7 planned.
 

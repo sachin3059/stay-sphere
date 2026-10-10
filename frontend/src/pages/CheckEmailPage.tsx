@@ -64,7 +64,7 @@ export function CheckEmailPage() {
       )}
       {resend.isSuccess && (
         <p className="mt-3 text-sm text-brand-800" role="status">
-          Email sent (or logged in auth-service when SendGrid is off).
+          Email sent (or logged in auth-service when SMTP is not configured).
         </p>
       )}
     </AuthShell>

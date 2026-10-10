@@ -50,7 +50,7 @@ export function ForgotPasswordPage() {
       {sent ? (
         <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-900" role="status">
           If an account exists for that email, we sent reset instructions. Check your inbox
-          (or auth-service logs in local dev when SendGrid is not configured).
+          (or auth-service logs the link in local dev when SMTP is not configured).
         </p>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -95,7 +95,7 @@ Pick check-in/out on **Book** or property **Check dates** — total comes from `
 
 - Sign in → header **bell** (`/notifications`) lists `GET /api/notifications/my`.
 - Unread count uses local last-seen time; inbox refreshes on focus and every 60s.
-- After book + pay (Kafka events), guest/host should see booking/payment rows (email may still fail in dev without SendGrid).
+- After book + pay (Kafka events), guest/host should see booking/payment rows (email may still fail in dev without SMTP).
 
 ### Step 13 (edit listings)
 

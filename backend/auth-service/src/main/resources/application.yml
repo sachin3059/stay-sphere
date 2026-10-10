@@ -1,6 +1,18 @@
 spring:
   application:
     name: auth-service
+  mail:
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/staysphere}
     username: ${SPRING_DATASOURCE_USERNAME:staysphere}
@@ -24,6 +36,9 @@ jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:900000}
 staysphere:
+  mail:
+    from-email: ${MAIL_FROM_EMAIL:noreply@staysphere.local}
+    from-name: ${MAIL_FROM_NAME:StaySphere}
   admin:
     bootstrap-email: ${STAYSPHERE_BOOTSTRAP_ADMIN_EMAIL:}
   oauth:
@@ -39,7 +54,3 @@ staysphere:
     email-verification:
       frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
       token-ttl-hours: 48
-sendgrid:
-  api-key: ${SENDGRID_API_KEY:}
-  from-email: ${SENDGRID_FROM_EMAIL:noreply@staysphere.local}
-  from-name: ${SENDGRID_FROM_NAME:StaySphere}

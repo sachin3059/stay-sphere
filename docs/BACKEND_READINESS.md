@@ -27,7 +27,7 @@ The API gateway at **`:8080`** is the single entry point for a browser or mobile
 
 - Stripe **webhooks** in deployed environments (`STRIPE_WEBHOOK_SECRET`)
 - Admin-only role assignment (ADMIN), email verification
-- SendGrid / Cloudinary keys for real emails and image CDN
+- SMTP (e.g. Brevo) / Cloudinary keys for real emails and image CDN
 - Rate limiting and API versioning
 
 ## Verify locally

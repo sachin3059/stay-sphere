@@ -29,7 +29,7 @@ Dev loop unchanged: `npm run dev` on `:5173` with `VITE_API_URL=http://localhost
 | `GOOGLE_CLIENT_ID`, `GITHUB_*` | auth-service | OAuth |
 | `VITE_*` / build args | frontend image build | OAuth client IDs baked at build time |
 | `STAYSPHERE_BOOTSTRAP_ADMIN_EMAIL` | auth-service | First admin |
-| `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL` | notification-service | Transactional email (optional until set) |
+| `SMTP_*`, `MAIL_FROM_EMAIL` | auth-service, notification-service | Transactional email via SMTP (e.g. Brevo) |
 
 Never commit `.env`. Use your host’s secret store in real production.
 
@@ -60,9 +60,9 @@ Local testing: `stripe listen --forward-to localhost:8080/api/payments/webhooks/
 - Google: authorized JS origin = your SPA URL; client ID in `GOOGLE_CLIENT_ID` + `VITE_GOOGLE_CLIENT_ID` at build.
 - GitHub: callback `https://<your-host>/auth/github/callback`; `VITE_GITHUB_CLIENT_ID` at build.
 
-## SendGrid email
+## Transactional email (SMTP)
 
-Set `SENDGRID_API_KEY` and a verified `SENDGRID_FROM_EMAIL`. Without a key, notifications are still stored in-app; email send is skipped (logged).
+Set `SMTP_HOST`, `SMTP_USERNAME`, `SMTP_PASSWORD`, and `MAIL_FROM_EMAIL` (verified sender). Without SMTP, auth links are logged by auth-service; notification emails are stored in-app but marked failed when send is skipped.
 
 ## CI
 

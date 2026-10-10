@@ -1,3 +1,5 @@
+-- No-op for new installs (columns/indexes created in V1). Safe to re-run on older DBs.
+
 ALTER TABLE users ALTER COLUMN password DROP NOT NULL;
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sub VARCHAR(255);

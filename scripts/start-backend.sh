@@ -9,7 +9,10 @@ fi
 
 echo "Building Spring Boot JARs (one Gradle run on your machine)..."
 chmod +x backend/gradlew
-./backend/gradlew bootJar -x test --no-daemon
+(
+  cd backend
+  ./gradlew bootJar -x test --no-daemon
+)
 
 echo "Starting containers..."
 docker compose up -d --build

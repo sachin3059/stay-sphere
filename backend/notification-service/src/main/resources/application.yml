@@ -1,6 +1,18 @@
 spring:
   application:
     name: notification-service
+  mail:
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/staysphere}
     username: ${SPRING_DATASOURCE_USERNAME:staysphere}
@@ -29,10 +41,10 @@ spring:
         spring.json.trusted.packages: "*"
 server:
   port: ${SERVER_PORT:8087}
+staysphere:
+  mail:
+    from-email: ${MAIL_FROM_EMAIL:noreply@example.com}
+    from-name: ${MAIL_FROM_NAME:StaySphere}
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}
-sendgrid:
-  api-key: ${SENDGRID_API_KEY:}
-  from-email: ${SENDGRID_FROM_EMAIL:noreply@example.com}
-  from-name: ${SENDGRID_FROM_NAME:StaySphere}
