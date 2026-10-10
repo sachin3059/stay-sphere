@@ -39,10 +39,11 @@ export function HomePage() {
 
   const { data: featured, isLoading } = useQuery({
     queryKey: ["properties", "featured"],
-    queryFn: () => searchProperties({}),
+    queryFn: () =>
+      searchProperties({ page: 0, size: 8, sort: "newest" }),
   });
 
-  const preview = (featured ?? []).slice(0, 8);
+  const preview = featured?.items ?? [];
 
   function handleSearch(params: PropertySearchParams) {
     const qs = new URLSearchParams();

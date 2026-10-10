@@ -3,6 +3,7 @@ package com.staysphere.property.controller;
 import com.staysphere.common.ApiResponse;
 import com.staysphere.property.dto.ImageUploadResponse;
 import com.staysphere.property.dto.PropertyRequest;
+import com.staysphere.property.dto.PropertyPageResponse;
 import com.staysphere.property.dto.PropertyResponse;
 import com.staysphere.property.dto.PropertyStatusRequest;
 import com.staysphere.property.service.PropertyService;
@@ -51,14 +52,18 @@ public class PropertyController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PropertyResponse>>> getAllProperties(
+    public ResponseEntity<ApiResponse<PropertyPageResponse>> getAllProperties(
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut) {
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "24") int size,
+            @RequestParam(defaultValue = "newest") String sort) {
         return ResponseEntity.ok(
                 ApiResponse.success("Properties fetched successfully",
-                        propertyService.getAllProperties(checkIn, checkOut)));
+                        propertyService.getAllProperties(
+                                checkIn, checkOut, page, size, sort)));
     }
 
     @GetMapping("/host")
@@ -70,7 +75,7 @@ public class PropertyController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<PropertyResponse>>> search(
+    public ResponseEntity<ApiResponse<PropertyPageResponse>> search(
             @RequestParam String city,
             @RequestParam(defaultValue = "1") int guests,
             @RequestParam(defaultValue = "0") BigDecimal minPrice,
@@ -78,16 +83,19 @@ public class PropertyController {
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut) {
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "9") int size,
+            @RequestParam(defaultValue = "newest") String sort) {
         return ResponseEntity.ok(
                 ApiResponse.success("Search results fetched successfully",
                         propertyService.searchProperties(
                                 city, guests, minPrice, maxPrice,
-                                checkIn, checkOut)));
+                                checkIn, checkOut, page, size, sort)));
     }
 
     @GetMapping("/search/advanced")
-    public ResponseEntity<ApiResponse<List<PropertyResponse>>> searchAdvanced(
+    public ResponseEntity<ApiResponse<PropertyPageResponse>> searchAdvanced(
             @RequestParam(required = false) String query,
             @RequestParam(required = false) String city,
             @RequestParam(required = false) Integer guests,
@@ -96,12 +104,15 @@ public class PropertyController {
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut) {
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "9") int size,
+            @RequestParam(defaultValue = "newest") String sort) {
         return ResponseEntity.ok(
                 ApiResponse.success("Search results fetched successfully",
                         propertyService.searchWithPostgres(
                                 query, city, guests, minPrice, maxPrice,
-                                checkIn, checkOut)));
+                                checkIn, checkOut, page, size, sort)));
     }
 
     @PutMapping("/{id}")

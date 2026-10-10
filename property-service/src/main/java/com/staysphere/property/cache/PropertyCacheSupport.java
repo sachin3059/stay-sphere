@@ -51,7 +51,10 @@ public class PropertyCacheSupport {
             BigDecimal minPrice,
             BigDecimal maxPrice,
             LocalDate checkIn,
-            LocalDate checkOut) {
+            LocalDate checkOut,
+            int page,
+            int size,
+            String sort) {
         long version = cache.currentVersion(SEARCH_VERSION_KEY);
         String payload = version
                 + "|" + norm(query)
@@ -60,7 +63,10 @@ public class PropertyCacheSupport {
                 + "|" + (minPrice == null ? "" : minPrice)
                 + "|" + (maxPrice == null ? "" : maxPrice)
                 + "|" + (checkIn == null ? "" : checkIn)
-                + "|" + (checkOut == null ? "" : checkOut);
+                + "|" + (checkOut == null ? "" : checkOut)
+                + "|" + page
+                + "|" + size
+                + "|" + norm(sort);
         return "prop:search:" + sha256(payload);
     }
 

@@ -118,7 +118,7 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 
 **Current focus:** **Phase 19 deploy ops** (Stripe webhook, SendGrid); **Phase 20 caching** code shipped.
 
-**Extended features (see `docs/EXTENDED_FEATURES.md`):** F1–F3 shipped; F4–F7 planned.
+**Extended features (see `docs/EXTENDED_FEATURES.md`):** F1–F3, F5 shipped; F4 skipped for now; F6–F7 planned.
 
 **Deferred:** ChatGPT sign-in.
 

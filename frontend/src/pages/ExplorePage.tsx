@@ -6,8 +6,6 @@ import { PropertyCardSkeleton } from "@/components/ui/Skeleton";
 import { searchProperties } from "@/features/properties/api";
 import {
   EXPLORE_PAGE_SIZE,
-  paginateProperties,
-  sortProperties,
   type ExploreSort,
 } from "@/features/properties/exploreSort";
 import type { PropertySearchParams } from "@/features/properties/types";
@@ -20,6 +18,8 @@ function paramsFromUrl(searchParams: URLSearchParams): PropertySearchParams {
   const guests = searchParams.get("guests");
   const minPrice = searchParams.get("minPrice");
   const maxPrice = searchParams.get("maxPrice");
+  const pageUi = Number(searchParams.get("page") ?? "1") || 1;
+  const sort = (searchParams.get("sort") as ExploreSort) || "newest";
   return {
     city: searchParams.get("city") ?? undefined,
     query: searchParams.get("query") ?? undefined,
@@ -28,6 +28,9 @@ function paramsFromUrl(searchParams: URLSearchParams): PropertySearchParams {
     maxPrice: maxPrice ? Number(maxPrice) : undefined,
     checkIn: searchParams.get("checkIn") ?? undefined,
     checkOut: searchParams.get("checkOut") ?? undefined,
+    page: Math.max(0, pageUi - 1),
+    size: EXPLORE_PAGE_SIZE,
+    sort,
   };
 }
 
@@ -37,22 +40,17 @@ export function ExplorePage() {
     () => paramsFromUrl(urlSearchParams),
     [urlSearchParams],
   );
-  const sort = (urlSearchParams.get("sort") as ExploreSort) || "newest";
-  const page = Number(urlSearchParams.get("page") ?? "1") || 1;
+  const sort = filters.sort ?? "newest";
+  const pageUi = (filters.page ?? 0) + 1;
 
   const { data, isLoading, isFetching, error } = useQuery({
     queryKey: ["properties", filters],
     queryFn: () => searchProperties(filters),
   });
 
-  const sorted = useMemo(
-    () => sortProperties(data ?? [], sort),
-    [data, sort],
-  );
-  const paged = useMemo(
-    () => paginateProperties(sorted, page, EXPLORE_PAGE_SIZE),
-    [sorted, page],
-  );
+  const items = data?.items ?? [];
+  const totalElements = data?.totalElements ?? 0;
+  const totalPages = data?.totalPages ?? 0;
 
   function updateParams(patch: Record<string, string | undefined>) {
     const qs = new URLSearchParams(urlSearchParams);
@@ -122,15 +120,15 @@ export function ExplorePage() {
             </li>
           ))}
         </ul>
-      ) : data && data.length > 0 ? (
+      ) : items.length > 0 ? (
         <>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 pb-4">
             <p className="text-sm font-medium text-ink">
-              {paged.total} {paged.total === 1 ? "stay" : "stays"}
-              {paged.totalPages > 1 && (
+              {totalElements} {totalElements === 1 ? "stay" : "stays"}
+              {totalPages > 1 && (
                 <span className="font-normal text-muted">
                   {" "}
-                  · Page {paged.page} of {paged.totalPages}
+                  · Page {pageUi} of {totalPages}
                 </span>
               )}
             </p>
@@ -153,7 +151,7 @@ export function ExplorePage() {
             </label>
           </div>
           <ul className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {paged.items.map((property) => (
+            {items.map((property) => (
               <li key={property.id}>
                 <PropertyCard
                   property={property}
@@ -163,15 +161,15 @@ export function ExplorePage() {
               </li>
             ))}
           </ul>
-          {paged.totalPages > 1 && (
+          {totalPages > 1 && (
             <div className="mt-10 flex flex-wrap justify-center gap-3">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={paged.page <= 1}
+                disabled={pageUi <= 1}
                 onClick={() =>
-                  updateParams({ page: String(paged.page - 1) })
+                  updateParams({ page: String(pageUi - 1) })
                 }
               >
                 Previous
@@ -180,9 +178,9 @@ export function ExplorePage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={paged.page >= paged.totalPages}
+                disabled={pageUi >= totalPages}
                 onClick={() =>
-                  updateParams({ page: String(paged.page + 1) })
+                  updateParams({ page: String(pageUi + 1) })
                 }
               >
                 Next

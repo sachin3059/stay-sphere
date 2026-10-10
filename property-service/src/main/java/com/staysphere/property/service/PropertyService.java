@@ -1,14 +1,15 @@
 package com.staysphere.property.service;
 
-import com.staysphere.availability.repository.BlockedDateRepository;
 import com.staysphere.common.exception.BadRequestException;
 import com.staysphere.common.exception.ResourceNotFoundException;
 import com.staysphere.property.cache.PropertyActiveBloomFilter;
 import com.staysphere.property.cache.PropertyCacheSupport;
 import com.staysphere.property.cache.PropertySearchCachePayload;
 import com.staysphere.property.dto.ImageUploadResponse;
+import com.staysphere.property.dto.PropertyPageResponse;
 import com.staysphere.property.dto.PropertyRequest;
 import com.staysphere.property.dto.PropertyResponse;
+import com.staysphere.property.search.PropertySearchSort;
 import com.staysphere.property.entity.Property;
 import com.staysphere.pricing.entity.PricingRule;
 import com.staysphere.pricing.repository.PricingRuleRepository;
@@ -22,9 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,13 +31,14 @@ import java.util.stream.Collectors;
 @Slf4j
 public class PropertyService {
 
+    private static final int MAX_PAGE_SIZE = 50;
+
     private final PropertyRepository propertyRepository;
     private final PropertySearchRepository propertySearchRepository;
     private final PricingRuleRepository pricingRuleRepository;
     private final CloudinaryService cloudinaryService;
     private final PropertyActiveBloomFilter propertyBloomFilter;
     private final PropertyCacheSupport propertyCache;
-    private final BlockedDateRepository blockedDateRepository;
 
     public PropertyResponse createProperty(PropertyRequest request, String hostId) {
         Property property = Property.builder()
@@ -85,78 +85,131 @@ public class PropertyService {
                 .collect(Collectors.toList());
     }
 
-    public List<PropertyResponse> searchProperties(
+    public PropertyPageResponse searchProperties(
             String city,
             int guests,
             BigDecimal minPrice,
             BigDecimal maxPrice,
             LocalDate checkIn,
-            LocalDate checkOut) {
-        validateStayDates(checkIn, checkOut);
-        String cacheKey = propertyCache.searchKey(
-                null, city, guests, minPrice, maxPrice, checkIn, checkOut);
-        PropertySearchCachePayload payload = propertyCache.redis().getOrLoad(
-                cacheKey,
-                PropertySearchCachePayload.class,
-                propertyCache.searchTtl(),
-                () -> new PropertySearchCachePayload(
-                        excludeBlocked(
-                                propertyRepository
-                                        .searchProperties(
-                                                city, guests, minPrice, maxPrice)
-                                        .stream()
-                                        .map(this::mapToResponse)
-                                        .collect(Collectors.toList()),
-                                checkIn,
-                                checkOut)));
-        return payload.getItems();
+            LocalDate checkOut,
+            int page,
+            int size,
+            String sort) {
+        return searchWithPostgres(
+                null,
+                city,
+                guests,
+                minPrice,
+                maxPrice,
+                checkIn,
+                checkOut,
+                page,
+                size,
+                sort);
     }
 
-    public List<PropertyResponse> searchWithPostgres(
+    public PropertyPageResponse searchWithPostgres(
             String query,
             String city,
             Integer guests,
             BigDecimal minPrice,
             BigDecimal maxPrice,
             LocalDate checkIn,
-            LocalDate checkOut) {
+            LocalDate checkOut,
+            int page,
+            int size,
+            String sortParam) {
         validateStayDates(checkIn, checkOut);
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+        String normalizedQuery = blankToNull(query);
+        boolean hasTextQuery = normalizedQuery != null;
+        PropertySearchSort sort = PropertySearchSort.fromParam(sortParam, hasTextQuery);
+
         String cacheKey = propertyCache.searchKey(
-                query, city, guests, minPrice, maxPrice, checkIn, checkOut);
+                normalizedQuery,
+                city,
+                guests,
+                minPrice,
+                maxPrice,
+                checkIn,
+                checkOut,
+                safePage,
+                safeSize,
+                sort.name());
         PropertySearchCachePayload payload = propertyCache.redis().getOrLoad(
                 cacheKey,
                 PropertySearchCachePayload.class,
                 propertyCache.searchTtl(),
                 () -> new PropertySearchCachePayload(
-                        propertySearchRepository.search(
-                                        blankToNull(query),
-                                        blankToNull(city),
-                                        guests,
-                                        minPrice,
-                                        maxPrice,
-                                        checkIn,
-                                        checkOut)
-                                .stream()
-                                .map(this::mapToResponse)
-                                .collect(Collectors.toList())));
-        return payload.getItems();
+                        loadSearchPage(
+                                normalizedQuery,
+                                city,
+                                guests,
+                                minPrice,
+                                maxPrice,
+                                checkIn,
+                                checkOut,
+                                sort,
+                                safePage,
+                                safeSize)));
+        return payload.getPage();
     }
 
-    public List<PropertyResponse> getAllProperties(
-            LocalDate checkIn, LocalDate checkOut) {
-        validateStayDates(checkIn, checkOut);
-        if (checkIn != null && checkOut != null) {
-            return propertyRepository
-                    .findAllActiveAvailableInRange(checkIn, checkOut)
-                    .stream()
-                    .map(this::mapToResponse)
-                    .collect(Collectors.toList());
-        }
-        return propertyRepository.findAll()
-                .stream()
-                .filter(p -> p.getStatus() == Property.PropertyStatus.ACTIVE)
+    public PropertyPageResponse getAllProperties(
+            LocalDate checkIn,
+            LocalDate checkOut,
+            int page,
+            int size,
+            String sort) {
+        return searchWithPostgres(
+                null,
+                null,
+                null,
+                null,
+                null,
+                checkIn,
+                checkOut,
+                page,
+                size,
+                sort);
+    }
+
+    private PropertyPageResponse loadSearchPage(
+            String query,
+            String city,
+            Integer guests,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            LocalDate checkIn,
+            LocalDate checkOut,
+            PropertySearchSort sort,
+            int page,
+            int size) {
+        var slice = propertySearchRepository.searchPage(
+                query,
+                city,
+                guests,
+                minPrice,
+                maxPrice,
+                checkIn,
+                checkOut,
+                sort,
+                page,
+                size);
+        List<PropertyResponse> items = slice.items().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+        int totalPages = slice.totalElements() == 0
+                ? 0
+                : (int) ((slice.totalElements() + size - 1) / size);
+        return PropertyPageResponse.builder()
+                .items(items)
+                .page(page)
+                .size(size)
+                .totalElements(slice.totalElements())
+                .totalPages(totalPages)
+                .build();
     }
 
     private void validateStayDates(LocalDate checkIn, LocalDate checkOut) {
@@ -172,20 +225,6 @@ public class PropertyService {
         }
     }
 
-    private List<PropertyResponse> excludeBlocked(
-            List<PropertyResponse> items,
-            LocalDate checkIn,
-            LocalDate checkOut) {
-        if (checkIn == null || checkOut == null) {
-            return items;
-        }
-        Set<String> blocked = new HashSet<>(
-                blockedDateRepository.findPropertyIdsBlockedInRange(
-                        checkIn, checkOut));
-        return items.stream()
-                .filter(p -> !blocked.contains(p.getId()))
-                .collect(Collectors.toList());
-    }
 
     public List<PropertyResponse> listAllForAdmin() {
         return propertyRepository.findAll()

@@ -72,15 +72,15 @@ OAuth-only accounts (no password) are ignored silently; API still returns succes
 
 ---
 
-## Phase F5 — Server-side sort + pagination (planned)
+## Phase F5 — Server-side sort + pagination ✅
 
-| Layer | Planned location |
-|-------|------------------|
-| API | `page`, `size`, `sort` on `/api/properties/search*`; return `Page<PropertyResponse>` |
-| DB | LIMIT/OFFSET in `PropertySearchRepository` |
-| Web | Explore infinite scroll or numbered pages |
-
-**Today:** Backend returns full lists; Explore paginates in the browser.
+| Layer | Location |
+|-------|----------|
+| API | `page` (0-based), `size` (max 50), `sort` on search + list endpoints |
+| Response | `PropertyPageResponse` (`items`, `totalElements`, `totalPages`, …) |
+| DB | `PropertySearchRepositoryImpl` — `LIMIT`/`OFFSET` + whitelisted `ORDER BY` |
+| Cache | Search keys include page, size, sort |
+| Web | Explore uses server totals; client `sortProperties` removed |
 
 ---
 

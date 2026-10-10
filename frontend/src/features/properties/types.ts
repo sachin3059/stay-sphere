@@ -27,6 +27,18 @@ export type PropertySearchParams = {
   maxPrice?: number;
   checkIn?: string;
   checkOut?: string;
+  /** 0-based page index for the API */
+  page?: number;
+  size?: number;
+  sort?: "newest" | "price_asc" | "price_desc";
+};
+
+export type PropertyPage = {
+  items: Property[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
 };
 
 export type PropertyType =

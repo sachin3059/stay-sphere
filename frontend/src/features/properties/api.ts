@@ -5,10 +5,12 @@ import type {
   CreatePropertyPayload,
   CreatePricingRulePayload,
   Property,
+  PropertyPage,
   PropertySearchParams,
   PropertyStatus,
   UpdatePropertyPayload,
 } from "./types";
+import { EXPLORE_PAGE_SIZE } from "./exploreSort";
 
 function toQuery(params: PropertySearchParams): string {
   const qs = new URLSearchParams();
@@ -25,23 +27,14 @@ function toQuery(params: PropertySearchParams): string {
   }
   if (params.checkIn) qs.set("checkIn", params.checkIn);
   if (params.checkOut) qs.set("checkOut", params.checkOut);
-  const s = qs.toString();
-  return s ? `?${s}` : "";
+  qs.set("page", String(params.page ?? 0));
+  qs.set("size", String(params.size ?? EXPLORE_PAGE_SIZE));
+  qs.set("sort", params.sort ?? "newest");
+  return `?${qs.toString()}`;
 }
 
-function hasDateRange(params: PropertySearchParams) {
-  return Boolean(params.checkIn && params.checkOut);
-}
-
-export async function fetchAllProperties(dates?: {
-  checkIn?: string;
-  checkOut?: string;
-}) {
-  const qs = new URLSearchParams();
-  if (dates?.checkIn) qs.set("checkIn", dates.checkIn);
-  if (dates?.checkOut) qs.set("checkOut", dates.checkOut);
-  const suffix = qs.toString() ? `?${qs.toString()}` : "";
-  return apiData<Property[]>(`/api/properties${suffix}`);
+export async function fetchAllProperties(params?: PropertySearchParams) {
+  return apiData<PropertyPage>(`/api/properties${toQuery(params ?? {})}`);
 }
 
 export async function fetchPropertyById(id: string) {
@@ -183,31 +176,9 @@ export async function uploadPropertyImages(
   return wrapped.data;
 }
 
+/** Server-side sort + pagination (F5). */
 export async function searchProperties(params: PropertySearchParams) {
-  const hasFilter =
-    params.query ||
-    params.city ||
-    params.guests ||
-    params.minPrice ||
-    params.maxPrice ||
-    hasDateRange(params);
-  if (!hasFilter) {
-    return fetchAllProperties();
-  }
-  if (
-    hasDateRange(params) &&
-    !params.query &&
-    !params.city &&
-    !params.guests &&
-    !params.minPrice &&
-    !params.maxPrice
-  ) {
-    return fetchAllProperties({
-      checkIn: params.checkIn,
-      checkOut: params.checkOut,
-    });
-  }
-  return apiData<Property[]>(
+  return apiData<PropertyPage>(
     `/api/properties/search/advanced${toQuery(params)}`,
   );
 }
