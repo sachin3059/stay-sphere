@@ -4,6 +4,8 @@ import com.staysphere.property.entity.Property;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import java.time.LocalDate;
 import java.util.List;
 
 public interface PropertyRepository extends JpaRepository<Property, String> {
@@ -25,4 +27,18 @@ public interface PropertyRepository extends JpaRepository<Property, String> {
             @Param("guests") int guests,
             @Param("minPrice") java.math.BigDecimal minPrice,
             @Param("maxPrice") java.math.BigDecimal maxPrice);
+
+    @Query(value = """
+            SELECT * FROM properties p
+            WHERE p.status = 'ACTIVE'
+              AND NOT EXISTS (
+                SELECT 1 FROM blocked_dates b
+                WHERE b.property_id = p.id
+                  AND b.start_date <= :checkOut
+                  AND b.end_date >= :checkIn
+              )
+            """, nativeQuery = true)
+    List<Property> findAllActiveAvailableInRange(
+            @Param("checkIn") LocalDate checkIn,
+            @Param("checkOut") LocalDate checkOut);
 }

@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.HexFormat;
 
 @Component
@@ -48,14 +49,18 @@ public class PropertyCacheSupport {
             String city,
             Integer guests,
             BigDecimal minPrice,
-            BigDecimal maxPrice) {
+            BigDecimal maxPrice,
+            LocalDate checkIn,
+            LocalDate checkOut) {
         long version = cache.currentVersion(SEARCH_VERSION_KEY);
         String payload = version
                 + "|" + norm(query)
                 + "|" + norm(city)
                 + "|" + (guests == null ? "" : guests)
                 + "|" + (minPrice == null ? "" : minPrice)
-                + "|" + (maxPrice == null ? "" : maxPrice);
+                + "|" + (maxPrice == null ? "" : maxPrice)
+                + "|" + (checkIn == null ? "" : checkIn)
+                + "|" + (checkOut == null ? "" : checkOut);
         return "prop:search:" + sha256(payload);
     }
 

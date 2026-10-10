@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 public interface PropertySearchRepository extends JpaRepository<Property, String> {
@@ -19,6 +20,16 @@ public interface PropertySearchRepository extends JpaRepository<Property, String
               AND (:maxPrice IS NULL OR p.price_per_night <= :maxPrice)
               AND (:query IS NULL OR p.search_vector @@ plainto_tsquery('english', :query)
                    OR p.title % :query)
+              AND (
+                CAST(:checkIn AS date) IS NULL
+                OR CAST(:checkOut AS date) IS NULL
+                OR NOT EXISTS (
+                  SELECT 1 FROM blocked_dates b
+                  WHERE b.property_id = p.id
+                    AND b.start_date <= CAST(:checkOut AS date)
+                    AND b.end_date >= CAST(:checkIn AS date)
+                )
+              )
             ORDER BY ts_rank(p.search_vector, plainto_tsquery('english', coalesce(:query, ''))) DESC
             LIMIT 50
             """, nativeQuery = true)
@@ -27,5 +38,7 @@ public interface PropertySearchRepository extends JpaRepository<Property, String
             @Param("city") String city,
             @Param("guests") Integer guests,
             @Param("minPrice") BigDecimal minPrice,
-            @Param("maxPrice") BigDecimal maxPrice);
+            @Param("maxPrice") BigDecimal maxPrice,
+            @Param("checkIn") LocalDate checkIn,
+            @Param("checkOut") LocalDate checkOut);
 }

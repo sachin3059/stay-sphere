@@ -13,7 +13,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.format.annotation.DateTimeFormat;
+
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -48,10 +51,14 @@ public class PropertyController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PropertyResponse>>> getAllProperties() {
+    public ResponseEntity<ApiResponse<List<PropertyResponse>>> getAllProperties(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut) {
         return ResponseEntity.ok(
                 ApiResponse.success("Properties fetched successfully",
-                        propertyService.getAllProperties()));
+                        propertyService.getAllProperties(checkIn, checkOut)));
     }
 
     @GetMapping("/host")
@@ -67,11 +74,16 @@ public class PropertyController {
             @RequestParam String city,
             @RequestParam(defaultValue = "1") int guests,
             @RequestParam(defaultValue = "0") BigDecimal minPrice,
-            @RequestParam(defaultValue = "99999") BigDecimal maxPrice) {
+            @RequestParam(defaultValue = "99999") BigDecimal maxPrice,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut) {
         return ResponseEntity.ok(
                 ApiResponse.success("Search results fetched successfully",
                         propertyService.searchProperties(
-                                city, guests, minPrice, maxPrice)));
+                                city, guests, minPrice, maxPrice,
+                                checkIn, checkOut)));
     }
 
     @GetMapping("/search/advanced")
@@ -80,11 +92,16 @@ public class PropertyController {
             @RequestParam(required = false) String city,
             @RequestParam(required = false) Integer guests,
             @RequestParam(required = false) BigDecimal minPrice,
-            @RequestParam(required = false) BigDecimal maxPrice) {
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut) {
         return ResponseEntity.ok(
                 ApiResponse.success("Search results fetched successfully",
                         propertyService.searchWithPostgres(
-                                query, city, guests, minPrice, maxPrice)));
+                                query, city, guests, minPrice, maxPrice,
+                                checkIn, checkOut)));
     }
 
     @PutMapping("/{id}")

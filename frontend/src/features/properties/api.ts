@@ -23,12 +23,25 @@ function toQuery(params: PropertySearchParams): string {
   if (params.maxPrice != null && params.maxPrice > 0) {
     qs.set("maxPrice", String(params.maxPrice));
   }
+  if (params.checkIn) qs.set("checkIn", params.checkIn);
+  if (params.checkOut) qs.set("checkOut", params.checkOut);
   const s = qs.toString();
   return s ? `?${s}` : "";
 }
 
-export async function fetchAllProperties() {
-  return apiData<Property[]>("/api/properties");
+function hasDateRange(params: PropertySearchParams) {
+  return Boolean(params.checkIn && params.checkOut);
+}
+
+export async function fetchAllProperties(dates?: {
+  checkIn?: string;
+  checkOut?: string;
+}) {
+  const qs = new URLSearchParams();
+  if (dates?.checkIn) qs.set("checkIn", dates.checkIn);
+  if (dates?.checkOut) qs.set("checkOut", dates.checkOut);
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return apiData<Property[]>(`/api/properties${suffix}`);
 }
 
 export async function fetchPropertyById(id: string) {
@@ -176,9 +189,23 @@ export async function searchProperties(params: PropertySearchParams) {
     params.city ||
     params.guests ||
     params.minPrice ||
-    params.maxPrice;
+    params.maxPrice ||
+    hasDateRange(params);
   if (!hasFilter) {
     return fetchAllProperties();
+  }
+  if (
+    hasDateRange(params) &&
+    !params.query &&
+    !params.city &&
+    !params.guests &&
+    !params.minPrice &&
+    !params.maxPrice
+  ) {
+    return fetchAllProperties({
+      checkIn: params.checkIn,
+      checkOut: params.checkOut,
+    });
   }
   return apiData<Property[]>(
     `/api/properties/search/advanced${toQuery(params)}`,

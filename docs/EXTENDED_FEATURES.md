@@ -50,15 +50,14 @@ OAuth-only accounts (no password) are ignored silently; API still returns succes
 
 ---
 
-## Phase F3 — Explore search by dates (planned)
+## Phase F3 — Explore search by dates ✅
 
-| Layer | Planned location |
-|-------|------------------|
-| API | Extend `PropertyController` search + `PropertySearchRepository` with `checkIn`/`checkOut`; join or filter via `AvailabilityService` |
-| Cache | New cache keys in `PropertyCacheSupport` (invalidate on booking/block) |
-| Web | `StaySearchBar` / `ExplorePage` query params |
-
-**Today:** Search is city, guests, price, FTS only (`PropertyService.searchWithPostgres`).
+| Layer | Location |
+|-------|----------|
+| API | Optional `checkIn` / `checkOut` on `GET /api/properties`, `/search`, `/search/advanced` |
+| SQL | `NOT EXISTS` on `blocked_dates` (advanced search + list-all-with-dates); JPQL search post-filter |
+| Cache | `PropertyCacheSupport.searchKey` includes dates; `AvailabilityService` bumps search gen on block |
+| Web | `StaySearchBar` dates, Explore URL params, property links carry dates |
 
 ---
 

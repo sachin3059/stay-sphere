@@ -33,4 +33,10 @@ public interface BlockedDateRepository
             @Param("endDate") LocalDate endDate);
 
     void deleteByReferenceId(String referenceId);
+
+    @Query("SELECT DISTINCT b.propertyId FROM BlockedDate b "
+            + "WHERE b.startDate <= :checkOut AND b.endDate >= :checkIn")
+    List<String> findPropertyIdsBlockedInRange(
+            @Param("checkIn") LocalDate checkIn,
+            @Param("checkOut") LocalDate checkOut);
 }

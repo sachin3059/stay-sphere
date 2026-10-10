@@ -5,14 +5,23 @@ import { Link } from "react-router-dom";
 
 type Props = {
   property: Property;
+  checkIn?: string;
+  checkOut?: string;
 };
 
-export function PropertyCard({ property }: Props) {
+export function PropertyCard({ property, checkIn, checkOut }: Props) {
   const image = property.imageUrls?.[0];
   const location = [property.city, property.country].filter(Boolean).join(", ");
+  const detailQs = new URLSearchParams();
+  if (checkIn) detailQs.set("checkIn", checkIn);
+  if (checkOut) detailQs.set("checkOut", checkOut);
+  const detailPath =
+    detailQs.toString()
+      ? `/properties/${property.id}?${detailQs.toString()}`
+      : `/properties/${property.id}`;
 
   return (
-    <Link to={`/properties/${property.id}`} className="group block">
+    <Link to={detailPath} className="group block">
       <div className="relative aspect-square overflow-hidden rounded-xl bg-stone-100">
         {image ? (
           <img

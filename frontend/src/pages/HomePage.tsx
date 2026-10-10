@@ -48,6 +48,8 @@ export function HomePage() {
     const qs = new URLSearchParams();
     if (params.city) qs.set("city", params.city);
     if (params.guests != null) qs.set("guests", String(params.guests));
+    if (params.checkIn) qs.set("checkIn", params.checkIn);
+    if (params.checkOut) qs.set("checkOut", params.checkOut);
     const q = qs.toString();
     navigate(q ? `/explore?${q}` : "/explore");
   }

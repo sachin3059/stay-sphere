@@ -25,6 +25,8 @@ export type PropertySearchParams = {
   guests?: number;
   minPrice?: number;
   maxPrice?: number;
+  checkIn?: string;
+  checkOut?: string;
 };
 
 export type PropertyType =

@@ -1,5 +1,7 @@
 package com.staysphere.property.service;
 
+import com.staysphere.availability.repository.BlockedDateRepository;
+import com.staysphere.common.exception.BadRequestException;
 import com.staysphere.common.exception.ResourceNotFoundException;
 import com.staysphere.property.cache.PropertyActiveBloomFilter;
 import com.staysphere.property.cache.PropertyCacheSupport;
@@ -18,8 +20,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,6 +38,7 @@ public class PropertyService {
     private final CloudinaryService cloudinaryService;
     private final PropertyActiveBloomFilter propertyBloomFilter;
     private final PropertyCacheSupport propertyCache;
+    private final BlockedDateRepository blockedDateRepository;
 
     public PropertyResponse createProperty(PropertyRequest request, String hostId) {
         Property property = Property.builder()
@@ -80,26 +86,43 @@ public class PropertyService {
     }
 
     public List<PropertyResponse> searchProperties(
-            String city, int guests,
-            BigDecimal minPrice, BigDecimal maxPrice) {
-        String cacheKey = propertyCache.searchKey(null, city, guests, minPrice, maxPrice);
+            String city,
+            int guests,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            LocalDate checkIn,
+            LocalDate checkOut) {
+        validateStayDates(checkIn, checkOut);
+        String cacheKey = propertyCache.searchKey(
+                null, city, guests, minPrice, maxPrice, checkIn, checkOut);
         PropertySearchCachePayload payload = propertyCache.redis().getOrLoad(
                 cacheKey,
                 PropertySearchCachePayload.class,
                 propertyCache.searchTtl(),
                 () -> new PropertySearchCachePayload(
-                        propertyRepository.searchProperties(city, guests, minPrice, maxPrice)
-                                .stream()
-                                .map(this::mapToResponse)
-                                .collect(Collectors.toList())));
+                        excludeBlocked(
+                                propertyRepository
+                                        .searchProperties(
+                                                city, guests, minPrice, maxPrice)
+                                        .stream()
+                                        .map(this::mapToResponse)
+                                        .collect(Collectors.toList()),
+                                checkIn,
+                                checkOut)));
         return payload.getItems();
     }
 
     public List<PropertyResponse> searchWithPostgres(
-            String query, String city, Integer guests,
-            BigDecimal minPrice, BigDecimal maxPrice) {
+            String query,
+            String city,
+            Integer guests,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            LocalDate checkIn,
+            LocalDate checkOut) {
+        validateStayDates(checkIn, checkOut);
         String cacheKey = propertyCache.searchKey(
-                query, city, guests, minPrice, maxPrice);
+                query, city, guests, minPrice, maxPrice, checkIn, checkOut);
         PropertySearchCachePayload payload = propertyCache.redis().getOrLoad(
                 cacheKey,
                 PropertySearchCachePayload.class,
@@ -110,18 +133,57 @@ public class PropertyService {
                                         blankToNull(city),
                                         guests,
                                         minPrice,
-                                        maxPrice)
+                                        maxPrice,
+                                        checkIn,
+                                        checkOut)
                                 .stream()
                                 .map(this::mapToResponse)
                                 .collect(Collectors.toList())));
         return payload.getItems();
     }
 
-    public List<PropertyResponse> getAllProperties() {
+    public List<PropertyResponse> getAllProperties(
+            LocalDate checkIn, LocalDate checkOut) {
+        validateStayDates(checkIn, checkOut);
+        if (checkIn != null && checkOut != null) {
+            return propertyRepository
+                    .findAllActiveAvailableInRange(checkIn, checkOut)
+                    .stream()
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
+        }
         return propertyRepository.findAll()
                 .stream()
                 .filter(p -> p.getStatus() == Property.PropertyStatus.ACTIVE)
                 .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    private void validateStayDates(LocalDate checkIn, LocalDate checkOut) {
+        if (checkIn == null && checkOut == null) {
+            return;
+        }
+        if (checkIn == null || checkOut == null) {
+            throw new BadRequestException(
+                    "Both checkIn and checkOut are required for date search");
+        }
+        if (!checkOut.isAfter(checkIn)) {
+            throw new BadRequestException("checkOut must be after checkIn");
+        }
+    }
+
+    private List<PropertyResponse> excludeBlocked(
+            List<PropertyResponse> items,
+            LocalDate checkIn,
+            LocalDate checkOut) {
+        if (checkIn == null || checkOut == null) {
+            return items;
+        }
+        Set<String> blocked = new HashSet<>(
+                blockedDateRepository.findPropertyIdsBlockedInRange(
+                        checkIn, checkOut));
+        return items.stream()
+                .filter(p -> !blocked.contains(p.getId()))
                 .collect(Collectors.toList());
     }
 

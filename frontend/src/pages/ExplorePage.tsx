@@ -26,6 +26,8 @@ function paramsFromUrl(searchParams: URLSearchParams): PropertySearchParams {
     guests: guests ? Number(guests) : undefined,
     minPrice: minPrice ? Number(minPrice) : undefined,
     maxPrice: maxPrice ? Number(maxPrice) : undefined,
+    checkIn: searchParams.get("checkIn") ?? undefined,
+    checkOut: searchParams.get("checkOut") ?? undefined,
   };
 }
 
@@ -68,6 +70,8 @@ export function ExplorePage() {
       guests: next.guests != null ? String(next.guests) : undefined,
       minPrice: next.minPrice != null ? String(next.minPrice) : undefined,
       maxPrice: next.maxPrice != null ? String(next.maxPrice) : undefined,
+      checkIn: next.checkIn,
+      checkOut: next.checkOut,
       page: "1",
     });
   }
@@ -83,6 +87,12 @@ export function ExplorePage() {
           {filters.city
             ? `Places in ${filters.city}`
             : "Homes, apartments, and unique stays"}
+          {filters.checkIn && filters.checkOut && (
+            <span>
+              {" "}
+              · {filters.checkIn} → {filters.checkOut}
+            </span>
+          )}
         </p>
       </header>
 
@@ -145,7 +155,11 @@ export function ExplorePage() {
           <ul className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {paged.items.map((property) => (
               <li key={property.id}>
-                <PropertyCard property={property} />
+                <PropertyCard
+                  property={property}
+                  checkIn={filters.checkIn}
+                  checkOut={filters.checkOut}
+                />
               </li>
             ))}
           </ul>
@@ -180,7 +194,7 @@ export function ExplorePage() {
         <Card className="border-dashed p-12 text-center">
           <p className="text-lg font-semibold text-ink">No stays match your search</p>
           <p className="mt-2 text-sm text-muted">
-            Try a different city or widen your price range.
+            Try a different city, different dates, or widen your price range.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link to="/explore">

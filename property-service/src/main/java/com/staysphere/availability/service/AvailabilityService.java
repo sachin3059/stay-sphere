@@ -1,6 +1,7 @@
 package com.staysphere.availability.service;
 
 import com.staysphere.availability.cache.AvailabilityCacheSupport;
+import com.staysphere.property.cache.PropertyCacheSupport;
 import com.staysphere.availability.cache.AvailabilityRangeCachePayload;
 import com.staysphere.availability.dto.*;
 import com.staysphere.availability.entity.BlockedDate;
@@ -22,6 +23,7 @@ public class AvailabilityService {
 
     private final BlockedDateRepository blockedDateRepository;
     private final AvailabilityCacheSupport availabilityCache;
+    private final PropertyCacheSupport propertyCache;
 
     // ── Kafka consumer ──────────────────────────────────────────
 
@@ -234,6 +236,7 @@ public class AvailabilityService {
 
     private void invalidateCache(String propertyId) {
         availabilityCache.bumpVersion(propertyId);
+        propertyCache.bumpSearchGeneration();
     }
 
     private BlockedDateResponse mapToResponse(BlockedDate b) {
