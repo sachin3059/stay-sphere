@@ -1,0 +1,111 @@
+# Extended features — build order and where code lives
+
+We add capabilities **one phase at a time** (backend + web + docs). Use this as a map of **what exists today** vs **what we are adding**.
+
+## Platform map (already shipped)
+
+| Concern | Service | Port | Key paths |
+|--------|---------|------|-----------|
+| Auth (JWT, OAuth, refresh) | `auth-service` | 8081 | `/api/auth/*` |
+| Listings, search, pricing, availability | `property-service` | 8082 | `/api/properties/*`, `/api/pricing/*`, `/api/availability/*` |
+| Bookings + waitlist | `booking-service` | 8083 | `/api/bookings/*`, `/api/waitlist/*` |
+| Stripe + webhooks | `payment-service` | 8084 | `/api/payments/*` |
+| In-app + email notifications | `notification-service` | 8087 | `/api/notifications/*` (Kafka-driven email) |
+| Entry + rate limit | `api-gateway` | 8080 | Routes in `application.yml`, public list in `GatewayPublicRouteMatcher` |
+| Shared errors, JWT, Redis cache helpers | `common` | — | `GlobalExceptionHandler`, `JwtUtil`, `RedisJsonCache` |
+
+Frontend: `frontend/src` — pages under `pages/`, API clients under `features/*/api.ts`, routes in `routes/router.tsx`.
+
+---
+
+## Phase F1 — Forgot password / reset ✅ (this doc’s first slice)
+
+**Goal:** Email/password users can recover access without SQL.
+
+| Layer | Location |
+|-------|----------|
+| DB | `auth-service/.../db/migration/V3__password_reset_tokens.sql` |
+| Entity / repo | `PasswordResetToken`, `PasswordResetTokenRepository` |
+| Logic | `PasswordResetService` — token hash (SHA-256), 1h TTL, single use, revokes refresh tokens on reset |
+| Email | `AuthEmailService` — SendGrid (same env as notification); dev logs link when key unset |
+| API | `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` |
+| Gateway | Public routes in `GatewayPublicRouteMatcher` |
+| Web | `ForgotPasswordPage`, `ResetPasswordPage`, `features/auth/api.ts` |
+
+**Flow:** User submits email → opaque token stored hashed → email with link `{FRONTEND_BASE_URL}/reset-password?token=...` → user sets new password → all refresh tokens revoked.
+
+OAuth-only accounts (no password) are ignored silently; API still returns success (no email enumeration).
+
+---
+
+## Phase F2 — Email verification (planned)
+
+| Layer | Planned location |
+|-------|------------------|
+| DB | `users.email_verified_at`, `email_verification_tokens` (auth-service) |
+| API | `POST /api/auth/verify-email`, resend; optional gate on book until verified |
+| Email | Reuse `AuthEmailService` |
+| Web | Verify page + banner on login |
+
+---
+
+## Phase F3 — Explore search by dates (planned)
+
+| Layer | Planned location |
+|-------|------------------|
+| API | Extend `PropertyController` search + `PropertySearchRepository` with `checkIn`/`checkOut`; join or filter via `AvailabilityService` |
+| Cache | New cache keys in `PropertyCacheSupport` (invalidate on booking/block) |
+| Web | `StaySearchBar` / `ExplorePage` query params |
+
+**Today:** Search is city, guests, price, FTS only (`PropertyService.searchWithPostgres`).
+
+---
+
+## Phase F4 — API versioning (planned)
+
+| Layer | Planned location |
+|-------|------------------|
+| Gateway | Route `/api/v1/**` → same services; deprecate unversioned paths later |
+| Services | Optional `@RequestMapping("/api/v1/auth")` or gateway strip-prefix |
+
+**Today:** All routes are `/api/...` without version prefix.
+
+---
+
+## Phase F5 — Server-side sort + pagination (planned)
+
+| Layer | Planned location |
+|-------|------------------|
+| API | `page`, `size`, `sort` on `/api/properties/search*`; return `Page<PropertyResponse>` |
+| DB | LIMIT/OFFSET in `PropertySearchRepository` |
+| Web | Explore infinite scroll or numbered pages |
+
+**Today:** Backend returns full lists; Explore paginates in the browser.
+
+---
+
+## Phase F6 — Stripe Connect / host payouts (planned)
+
+| Layer | Planned location |
+|-------|------------------|
+| payment-service | Connect account onboarding, application fees, transfer on `payment_intent.succeeded` |
+| booking/property | Store `stripeConnectAccountId` on host user or listing |
+| Web | Host “Payouts” settings |
+
+**Today:** Single platform Stripe account; hosts are not paid out automatically.
+
+---
+
+## Phase F7 — Stronger geo search (planned)
+
+| Layer | Planned location |
+|-------|------------------|
+| DB | PostGIS or `earth_distance` / bounding box in `PropertySearchRepository` |
+| API | `lat`, `lng`, `radiusKm` query params |
+| ADR | Update `006-search-in-postgres.md` if we add PostGIS |
+
+**Today:** Lat/lon on listings + map on detail; no radius filter on search.
+
+---
+
+Update `docs/APPLICATION_ROADMAP.md` checkboxes when each phase ships.

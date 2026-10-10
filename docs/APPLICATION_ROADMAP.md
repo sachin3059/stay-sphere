@@ -118,7 +118,9 @@ Use this as the **feature checklist** (✓ = shipped in Part A).
 
 **Current focus:** **Phase 19 deploy ops** (Stripe webhook, SendGrid); **Phase 20 caching** code shipped.
 
-**Deferred from Phase 17:** forgot password / email verification (SendGrid); ChatGPT sign-in.
+**Extended features (see `docs/EXTENDED_FEATURES.md`):** F1 forgot password shipped; F2–F7 planned (email verification, date search, API v1, pagination, Connect, geo).
+
+**Deferred:** ChatGPT sign-in.
 
 **Deferred (optional):** Explore date-range search (needs search API + availability); server-side sort/pagination when listings exceed client page size.
 

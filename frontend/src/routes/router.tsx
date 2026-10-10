@@ -24,7 +24,9 @@ import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
 import { AdminListingsPage } from "@/pages/admin/AdminListingsPage";
 import { AdminUsersPage } from "@/pages/admin/AdminUsersPage";
 import { GitHubOAuthCallbackPage } from "@/pages/GitHubOAuthCallbackPage";
+import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { LoginPage } from "@/pages/LoginPage";
+import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { RegisterPage } from "@/pages/RegisterPage";
@@ -173,6 +175,22 @@ export const router = createBrowserRouter([
         element: (
           <GuestOnlyRoute>
             <LoginPage />
+          </GuestOnlyRoute>
+        ),
+      },
+      {
+        path: "/forgot-password",
+        element: (
+          <GuestOnlyRoute>
+            <ForgotPasswordPage />
+          </GuestOnlyRoute>
+        ),
+      },
+      {
+        path: "/reset-password",
+        element: (
+          <GuestOnlyRoute>
+            <ResetPasswordPage />
           </GuestOnlyRoute>
         ),
       },

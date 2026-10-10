@@ -4,9 +4,12 @@ import com.staysphere.auth.dto.AuthResponse;
 import com.staysphere.auth.dto.GitHubOAuthRequest;
 import com.staysphere.auth.dto.GoogleOAuthRequest;
 import com.staysphere.auth.dto.LoginRequest;
+import com.staysphere.auth.dto.ForgotPasswordRequest;
 import com.staysphere.auth.dto.RefreshTokenRequest;
 import com.staysphere.auth.dto.RegisterRequest;
+import com.staysphere.auth.dto.ResetPasswordRequest;
 import com.staysphere.auth.service.AuthService;
+import com.staysphere.auth.service.PasswordResetService;
 import com.staysphere.common.ApiResponse;
 import com.staysphere.common.security.TokenDenylistService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordResetService passwordResetService;
     private final TokenDenylistService tokenDenylistService;
 
     @Value("${jwt.expiration:900000}")
@@ -74,6 +78,23 @@ public class AuthController {
         return ResponseEntity.ok(
                 ApiResponse.success("Upgraded to host",
                         authService.becomeHost(email)));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<String>> forgotPassword(
+            @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestReset(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.success(
+                "If an account exists for that email, we sent reset instructions."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<String>> resetPassword(
+            @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(
+                request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.success(
+                "Password updated. You can sign in with your new password."));
     }
 
     @PostMapping("/logout")

@@ -43,7 +43,16 @@ If the OAuth email matches an existing **email/password** user, the Google/GitHu
 
 OAuth-only users have no password; they must use social sign-in.
 
+## Password reset (email accounts)
+
+- `POST /api/auth/forgot-password` with `{ "email": "..." }`
+- `POST /api/auth/reset-password` with `{ "token": "...", "newPassword": "..." }`
+- Web: `/forgot-password`, `/reset-password?token=...`
+- Set `FRONTEND_BASE_URL` (auth-service) for links in email; `SENDGRID_*` for real mail (otherwise link is logged by auth-service).
+
+See `docs/EXTENDED_FEATURES.md` (Phase F1).
+
 ## Not implemented
 
-- Forgot password / email verification (Phase 17.6)
+- Email verification (Phase F2)
 - ChatGPT sign-in

@@ -35,7 +35,9 @@ public class SecurityConfig {
                                 "/api/auth/logout",
                                 "/api/auth/health",
                                 "/api/auth/oauth/google",
-                                "/api/auth/oauth/github"
+                                "/api/auth/oauth/github",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password"
                         ).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/auth/become-host").authenticated()

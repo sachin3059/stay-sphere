@@ -43,3 +43,20 @@ export async function logoutRequest(refreshToken: string) {
     body: { refreshToken },
   });
 }
+
+export async function forgotPasswordRequest(payload: { email: string }) {
+  return apiData<string>("/api/auth/forgot-password", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export async function resetPasswordRequest(payload: {
+  token: string;
+  newPassword: string;
+}) {
+  return apiData<string>("/api/auth/reset-password", {
+    method: "POST",
+    body: payload,
+  });
+}

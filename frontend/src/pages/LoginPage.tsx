@@ -73,14 +73,24 @@ export function LoginPage() {
           placeholder="you@example.com"
           required
         />
-        <Input
-          label="Password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <div>
+          <Input
+            label="Password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <p className="mt-1 text-right text-sm">
+            <Link
+              to="/forgot-password"
+              className="font-medium text-brand-700 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </p>
+        </div>
         {fieldError && (
           <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
             {fieldError}

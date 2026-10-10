@@ -32,3 +32,11 @@ staysphere:
     github:
       client-id: ${GITHUB_CLIENT_ID:}
       client-secret: ${GITHUB_CLIENT_SECRET:}
+  auth:
+    password-reset:
+      frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+      token-ttl-minutes: 60
+sendgrid:
+  api-key: ${SENDGRID_API_KEY:}
+  from-email: ${SENDGRID_FROM_EMAIL:noreply@staysphere.local}
+  from-name: ${SENDGRID_FROM_NAME:StaySphere}
