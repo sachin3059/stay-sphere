@@ -38,7 +38,7 @@ src/
 4. **Host** — create property + pricing
 5. **Booking & Stripe** — book, pay, my trips
 6. **Host ops & guest polish** — host reservations, resume pending payment
-7. **Listing photos** — Cloudinary upload on create + manage photos
+7. **Listing photos** — S3 presigned direct upload on create + manage photos (`docs/S3_MEDIA.md`)
 8. **Session** — refresh on 401 + proactive token refresh
 9. **Availability** — check dates, host calendar blocks
 10. **Pricing quote** — server calculate on book
@@ -68,7 +68,7 @@ Routes: `/properties/:id/book`, `/bookings/:id/pay`, `/bookings/my`, `/bookings/
 
 ### Step 7 (photos)
 
-Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` in repo-root `.env` and restart **property-service**. Then:
+Set `AWS_S3_BUCKET`, `AWS_REGION`, and IAM credentials in repo-root `.env` (see `docs/S3_MEDIA.md`) and restart **property-service**. Then:
 
 - **List a property** — choose photos before **Publish listing**, or
 - **My listings** → **Add photos** / **Manage photos** (`/host/listings/:id/photos`).

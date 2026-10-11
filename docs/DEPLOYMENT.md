@@ -25,7 +25,7 @@ Dev loop unchanged: `npm run dev` on `:5173` with `VITE_API_URL=http://localhost
 | `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` | payment-service | Live or test keys |
 | `STRIPE_WEBHOOK_SECRET` | payment-service | From Stripe Dashboard webhook |
 | `PAYMENT_GATEWAY` | payment-service | `stripe` in production |
-| `CLOUDINARY_*` | property-service | Listing photos |
+| `AWS_S3_BUCKET`, `AWS_*` | property-service | S3 presigned listing media — see `docs/S3_MEDIA.md` |
 | `GOOGLE_CLIENT_ID`, `GITHUB_*` | auth-service | OAuth |
 | `VITE_*` / build args | frontend image build | OAuth client IDs baked at build time |
 | `STAYSPHERE_BOOTSTRAP_ADMIN_EMAIL` | auth-service | First admin |
@@ -78,5 +78,5 @@ GitHub Actions runs `./gradlew build` in `backend/` and `npm run build` in `fron
 - [ ] Register / login (email or GitHub)
 - [ ] Explore → book → pay (Stripe test or live)
 - [ ] Webhook confirms booking (check booking status CONFIRMED)
-- [ ] Host listing + photo upload (Cloudinary)
+- [ ] Host listing + photo upload (S3 presigned — `docs/S3_MEDIA.md`)
 - [ ] Admin bootstrap works (`docs/ADMIN.md`)

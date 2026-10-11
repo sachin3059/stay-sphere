@@ -5,7 +5,12 @@ import com.staysphere.common.exception.ResourceNotFoundException;
 import com.staysphere.property.cache.PropertyActiveBloomFilter;
 import com.staysphere.property.cache.PropertyCacheSupport;
 import com.staysphere.property.cache.PropertySearchCachePayload;
+import com.staysphere.property.dto.ConfirmPropertyMediaRequest;
 import com.staysphere.property.dto.ImageUploadResponse;
+import com.staysphere.property.dto.MediaFileDescriptor;
+import com.staysphere.property.dto.PresignPropertyMediaRequest;
+import com.staysphere.property.dto.PresignPropertyMediaResponse;
+import com.staysphere.property.dto.PresignedUploadItem;
 import com.staysphere.property.dto.PropertyPageResponse;
 import com.staysphere.property.dto.PropertyRequest;
 import com.staysphere.property.dto.PropertyResponse;
@@ -18,8 +23,6 @@ import com.staysphere.property.repository.PropertySearchRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -36,7 +39,7 @@ public class PropertyService {
     private final PropertyRepository propertyRepository;
     private final PropertySearchRepository propertySearchRepository;
     private final PricingRuleRepository pricingRuleRepository;
-    private final CloudinaryService cloudinaryService;
+    private final S3MediaService s3MediaService;
     private final PropertyActiveBloomFilter propertyBloomFilter;
     private final PropertyCacheSupport propertyCache;
 
@@ -312,10 +315,14 @@ public class PropertyService {
                 || !property.getImageUrls().contains(imageUrl)) {
             throw new ResourceNotFoundException("Image not found on listing");
         }
-        try {
-            cloudinaryService.deleteImageByUrl(imageUrl);
-        } catch (IllegalArgumentException ex) {
-            log.warn("Skipping Cloudinary delete for url: {}", imageUrl);
+        if (s3MediaService.isManagedMediaUrl(imageUrl)) {
+            try {
+                s3MediaService.deleteByPublicUrl(imageUrl);
+            } catch (IllegalArgumentException ex) {
+                log.warn("Skipping S3 delete for url: {}", imageUrl);
+            }
+        } else {
+            log.warn("Skipping storage delete for external url: {}", imageUrl);
         }
         property.getImageUrls().remove(imageUrl);
         Property saved = propertyRepository.save(property);
@@ -368,31 +375,65 @@ public class PropertyService {
                 });
     }
 
-    public ImageUploadResponse uploadPropertyImages(
+    public PresignPropertyMediaResponse presignPropertyMediaUploads(
             String propertyId,
-            List<MultipartFile> files,
+            PresignPropertyMediaRequest request,
             String hostId) {
-
-        Property property = propertyRepository.findById(propertyId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Property not found"));
-
-        if (!property.getHostId().equals(hostId)) {
-            throw new ResourceNotFoundException(
-                    "Not authorized to upload images for this property");
+        loadHostProperty(propertyId, hostId);
+        if (request.getFiles() == null || request.getFiles().isEmpty()) {
+            throw new BadRequestException("At least one file is required");
+        }
+        if (request.getFiles().size() > 20) {
+            throw new BadRequestException("Maximum 20 files per presign request");
         }
 
-        List<String> urls = cloudinaryService
-                .uploadMultipleImages(files, "properties/" + propertyId);
+        List<PresignedUploadItem> uploads = new ArrayList<>();
+        for (MediaFileDescriptor file : request.getFiles()) {
+            String contentType = s3MediaService.resolveContentType(
+                    file.getContentType(), file.getFileName());
+            s3MediaService.validateFileSize(contentType, file.getSizeBytes());
+            String objectKey = s3MediaService.buildObjectKey(
+                    propertyId, file.getFileName());
+            String uploadUrl = s3MediaService.createPresignedUploadUrl(
+                    objectKey, contentType);
+            uploads.add(PresignedUploadItem.builder()
+                    .uploadUrl(uploadUrl)
+                    .objectKey(objectKey)
+                    .publicUrl(s3MediaService.publicUrlForKey(objectKey))
+                    .contentType(contentType)
+                    .build());
+        }
+
+        return PresignPropertyMediaResponse.builder()
+                .propertyId(propertyId)
+                .uploads(uploads)
+                .build();
+    }
+
+    public ImageUploadResponse confirmPropertyMediaUploads(
+            String propertyId,
+            ConfirmPropertyMediaRequest request,
+            String hostId) {
+        Property property = loadHostProperty(propertyId, hostId);
+        if (request.getObjectKeys() == null || request.getObjectKeys().isEmpty()) {
+            throw new BadRequestException("objectKeys is required");
+        }
+
+        List<String> urls = new ArrayList<>();
+        for (String objectKey : request.getObjectKeys()) {
+            s3MediaService.assertKeyBelongsToProperty(objectKey, propertyId);
+            s3MediaService.assertObjectExists(objectKey);
+            urls.add(s3MediaService.publicUrlForKey(objectKey));
+        }
 
         if (property.getImageUrls() == null) {
-            property.setImageUrls(new java.util.ArrayList<>());
+            property.setImageUrls(new ArrayList<>());
         }
         property.getImageUrls().addAll(urls);
         propertyRepository.save(property);
         propertyCache.evictDetail(propertyId);
 
-        log.info("Uploaded {} images for property {}", urls.size(), propertyId);
+        log.info("Confirmed {} media uploads for property {}", urls.size(), propertyId);
 
         return ImageUploadResponse.builder()
                 .propertyId(propertyId)

@@ -1,7 +1,10 @@
 package com.staysphere.property.controller;
 
 import com.staysphere.common.ApiResponse;
+import com.staysphere.property.dto.ConfirmPropertyMediaRequest;
 import com.staysphere.property.dto.ImageUploadResponse;
+import com.staysphere.property.dto.PresignPropertyMediaRequest;
+import com.staysphere.property.dto.PresignPropertyMediaResponse;
 import com.staysphere.property.dto.PropertyRequest;
 import com.staysphere.property.dto.PropertyPageResponse;
 import com.staysphere.property.dto.PropertyResponse;
@@ -12,8 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
@@ -148,15 +149,26 @@ public class PropertyController {
                                 id, url, getCurrentUserId())));
     }
 
-    @PostMapping("/{id}/images")
+    @PostMapping("/{id}/images/presign")
     @PreAuthorize("hasRole('HOST')")
-    public ResponseEntity<ApiResponse<ImageUploadResponse>> uploadImages(
+    public ResponseEntity<ApiResponse<PresignPropertyMediaResponse>> presignMediaUploads(
             @PathVariable String id,
-            @RequestParam("files") List<MultipartFile> files) {
+            @RequestBody PresignPropertyMediaRequest request) {
         return ResponseEntity.ok(
-                ApiResponse.success("Images uploaded successfully",
-                        propertyService.uploadPropertyImages(
-                                id, files, getCurrentUserId())));
+                ApiResponse.success("Upload URLs created",
+                        propertyService.presignPropertyMediaUploads(
+                                id, request, getCurrentUserId())));
+    }
+
+    @PostMapping("/{id}/images/confirm")
+    @PreAuthorize("hasRole('HOST')")
+    public ResponseEntity<ApiResponse<ImageUploadResponse>> confirmMediaUploads(
+            @PathVariable String id,
+            @RequestBody ConfirmPropertyMediaRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.success("Media attached to listing",
+                        propertyService.confirmPropertyMediaUploads(
+                                id, request, getCurrentUserId())));
     }
 
     @GetMapping("/health")

@@ -1,5 +1,4 @@
-import { apiData, getApiBaseUrl } from "@/lib/api/client";
-import { fetchWithAuthRetry } from "@/lib/auth/refreshSession";
+import { apiData } from "@/lib/api/client";
 import { ApiError, type ApiErrorBody, type ApiResponse } from "@/lib/api/types";
 import type {
   CreatePropertyPayload,
@@ -132,6 +131,18 @@ export type ImageUploadResult = {
   totalImages: number;
 };
 
+type PresignedUploadItem = {
+  uploadUrl: string;
+  objectKey: string;
+  publicUrl: string;
+  contentType: string;
+};
+
+type PresignUploadResult = {
+  propertyId: string;
+  uploads: PresignedUploadItem[];
+};
+
 export async function uploadPropertyImages(
   token: string,
   propertyId: string,
@@ -140,40 +151,53 @@ export async function uploadPropertyImages(
   if (files.length === 0) {
     throw new Error("No files selected");
   }
-  const form = new FormData();
-  for (const file of files) {
-    form.append("files", file);
-  }
-  const url = `${getApiBaseUrl()}/api/properties/${propertyId}/images`;
-  const response = await fetchWithAuthRetry(url, {
-    method: "POST",
-    token,
-    body: form,
-  });
 
-  const text = await response.text();
-  let json: unknown = null;
-  if (text) {
-    try {
-      json = JSON.parse(text);
-    } catch {
-      /* non-json */
+  const presign = await apiData<PresignUploadResult>(
+    `/api/properties/${propertyId}/images/presign`,
+    {
+      method: "POST",
+      token,
+      body: {
+        files: files.map((file) => ({
+          fileName: file.name,
+          contentType: file.type || "application/octet-stream",
+          sizeBytes: file.size,
+        })),
+      },
+    },
+  );
+
+  if (presign.uploads.length !== files.length) {
+    throw new Error("Presign response did not match selected files");
+  }
+
+  for (let i = 0; i < files.length; i++) {
+    const item = presign.uploads[i];
+    const putResponse = await fetch(item.uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": item.contentType,
+      },
+      body: files[i],
+    });
+    if (!putResponse.ok) {
+      throw new ApiError(
+        `Direct upload to storage failed (${putResponse.status})`,
+        putResponse.status,
+      );
     }
   }
 
-  if (!response.ok) {
-    const errBody = json as ApiErrorBody | null;
-    const message =
-      errBody?.message ??
-      (typeof json === "object" && json && "error" in json
-        ? String((json as { error: string }).error)
-        : response.statusText) ??
-      "Upload failed";
-    throw new ApiError(message, response.status, errBody ?? undefined);
-  }
-
-  const wrapped = json as ApiResponse<ImageUploadResult>;
-  return wrapped.data;
+  return apiData<ImageUploadResult>(
+    `/api/properties/${propertyId}/images/confirm`,
+    {
+      method: "POST",
+      token,
+      body: {
+        objectKeys: presign.uploads.map((u) => u.objectKey),
+      },
+    },
+  );
 }
 
 /** Server-side sort + pagination (F5). */

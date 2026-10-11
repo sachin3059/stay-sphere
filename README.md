@@ -61,7 +61,7 @@ StaySphere is a distributed property booking platform built to demonstrate real-
                         │
 ┌───────────────────────▼─────────────────────────────┐
 │                   Data Layer                         │
-│  PostgreSQL · Redis · S3/Cloudinary  │
+│  PostgreSQL · Redis · S3 (media)     │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -81,7 +81,7 @@ StaySphere is a distributed property booking platform built to demonstrate real-
 | ORM | Spring Data JPA + Hibernate |
 | Security | Spring Security + JWT (jjwt 0.12.3) |
 | Email | Amazon SES (SMTP) |
-| Media | Cloudinary |
+| Media | S3 presigned upload (property-service) |
 | Build | Gradle (multi-module) |
 | Containerization | Docker + Docker Compose |
 
@@ -763,9 +763,9 @@ Each service owns its data. Property-service manages listing metadata. Availabil
 | `jwt.secret` | All | 256-bit hex JWT signing key |
 | `jwt.expiration` | All | Token expiry in ms (default: 86400000 = 24h) |
 | `SMTP_*`, `MAIL_FROM_EMAIL` | Auth, Notification | SES SMTP + verified domain/sender |
-| `cloudinary.cloud-name` | Property | Cloudinary cloud name |
-| `cloudinary.api-key` | Property | Cloudinary API key |
-| `cloudinary.api-secret` | Property | Cloudinary API secret |
+| `AWS_S3_BUCKET`, `AWS_REGION` | Property | S3 bucket for listing media (`docs/S3_MEDIA.md`) |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Property | IAM credentials for presign (local/dev) |
+| `STAYSPHERE_S3_PUBLIC_BASE_URL` | Property | Optional CloudFront base URL for public media links |
 
 ---
 
