@@ -223,7 +223,7 @@ public class NotificationService {
         Notification saved = notificationRepository.save(notification);
 
         // Try to send email — log is used as fallback in dev
-        // SMTP (e.g. Brevo) when configured
+        // SMTP (Amazon SES) when configured
         boolean sent = emailService.sendEmail(
                 recipientEmail, subject, message);
 

@@ -29,7 +29,7 @@ Dev loop unchanged: `npm run dev` on `:5173` with `VITE_API_URL=http://localhost
 | `GOOGLE_CLIENT_ID`, `GITHUB_*` | auth-service | OAuth |
 | `VITE_*` / build args | frontend image build | OAuth client IDs baked at build time |
 | `STAYSPHERE_BOOTSTRAP_ADMIN_EMAIL` | auth-service | First admin |
-| `SMTP_*`, `MAIL_FROM_EMAIL` | auth-service, notification-service | Transactional email via SMTP (e.g. Brevo) |
+| `SMTP_*`, `MAIL_FROM_EMAIL` | auth-service, notification-service | Transactional email via Amazon SES SMTP |
 
 Never commit `.env`. Use your host’s secret store in real production.
 

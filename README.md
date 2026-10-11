@@ -80,7 +80,7 @@ StaySphere is a distributed property booking platform built to demonstrate real-
 | Search | PostgreSQL FTS (`tsvector` + `pg_trgm`) |
 | ORM | Spring Data JPA + Hibernate |
 | Security | Spring Security + JWT (jjwt 0.12.3) |
-| Email | SMTP (Brevo) |
+| Email | Amazon SES (SMTP) |
 | Media | Cloudinary |
 | Build | Gradle (multi-module) |
 | Containerization | Docker + Docker Compose |
@@ -762,7 +762,7 @@ Each service owns its data. Property-service manages listing metadata. Availabil
 | `spring.kafka.bootstrap-servers` | Booking, Payment, Waitlist, Notification, Availability | Kafka broker |
 | `jwt.secret` | All | 256-bit hex JWT signing key |
 | `jwt.expiration` | All | Token expiry in ms (default: 86400000 = 24h) |
-| `SMTP_*`, `MAIL_FROM_EMAIL` | Auth, Notification | Brevo SMTP + verified sender |
+| `SMTP_*`, `MAIL_FROM_EMAIL` | Auth, Notification | SES SMTP + verified domain/sender |
 | `cloudinary.cloud-name` | Property | Cloudinary cloud name |
 | `cloudinary.api-key` | Property | Cloudinary API key |
 | `cloudinary.api-secret` | Property | Cloudinary API secret |

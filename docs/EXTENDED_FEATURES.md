@@ -27,7 +27,7 @@ Frontend: `frontend/src` — pages under `pages/`, API clients under `features/*
 | DB | `auth-service/.../db/migration/V3__password_reset_tokens.sql` |
 | Entity / repo | `PasswordResetToken`, `PasswordResetTokenRepository` |
 | Logic | `PasswordResetService` — token hash (SHA-256), 1h TTL, single use, revokes refresh tokens on reset |
-| Email | `AuthEmailService` — SMTP via Brevo (same env as notification); dev logs link when SMTP unset |
+| Email | `AuthEmailService` — SMTP via Amazon SES (same env as notification); dev logs link when SMTP unset |
 | API | `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` |
 | Gateway | Public routes in `GatewayPublicRouteMatcher` |
 | Web | `ForgotPasswordPage`, `ResetPasswordPage`, `features/auth/api.ts` |
