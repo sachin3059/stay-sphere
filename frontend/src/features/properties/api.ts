@@ -1,5 +1,5 @@
 import { apiData } from "@/lib/api/client";
-import { ApiError, type ApiErrorBody, type ApiResponse } from "@/lib/api/types";
+import { ApiError } from "@/lib/api/types";
 import type {
   CreatePropertyPayload,
   CreatePricingRulePayload,

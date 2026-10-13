@@ -121,20 +121,21 @@ INSERT INTO property_amenities (property_id, amenity) VALUES
 
 INSERT INTO pricing_rules
   (id, property_id, base_price, minimum_stay, weekend_multiplier,
-   peak_season_start, peak_season_end, peak_season_multiplier, status)
+   peak_season_start, peak_season_end, peak_season_multiplier,
+   long_stay_discount, long_stay_threshold_nights, status)
 VALUES
-  ('7b1655e8-1b40-4779-b7d2-e59a412fd551', '3f2a9c14-7b8e-4d21-9a05-1c6e0d3f4a01', 9000, 2, 1.2, DATE '2026-12-20', DATE '2027-01-05', 1.5, 'ACTIVE'),
-  ('4f3c4732-0c69-40fa-a7c1-1f35f0dcd9e9', '8b1d6e27-2f4a-4c93-b6d1-0a2e7f5c1b02', 3200, 1, 1.2, NULL, NULL, NULL, 'ACTIVE'),
-  ('05be1da4-5951-4169-8e6a-b31e9b11f704', 'c4e7a913-5d8b-42f6-8e0a-3b9c1d6f2a03', 6500, 1, 1.2, NULL, NULL, NULL, 'ACTIVE'),
-  ('cca2486c-b4fa-4131-ab38-1863d854891a', '1a9f3c58-6e2d-4b74-9c31-5f8a0e7d3b04', 2800, 1, 1.0, NULL, NULL, NULL, 'ACTIVE'),
-  ('aec61295-c6f6-460e-8dbe-492327ffab8e', '7d2b8e41-3a9c-4f16-8b52-6c1e9a0f4d05', 5200, 2, 1.0, NULL, NULL, NULL, 'ACTIVE'),
-  ('e87493d3-740e-40a3-9963-958c71199265', '9e5c1a73-8b4d-42a9-b7e6-0f3c2d1a6b06', 4200, 2, 1.0, DATE '2026-12-15', DATE '2027-01-10', 1.5, 'ACTIVE'),
-  ('b37f946a-0395-4abe-93af-4d4e3cf3c3f9', '2c8a4f19-7d3b-4e56-9a1c-8b0e5f2d3c07', 5800, 1, 1.2, NULL, NULL, NULL, 'ACTIVE'),
-  ('954d5441-2601-4349-b0ce-3eadacda05f1', '6f1e9b34-2a7c-48d5-b3e9-1c4a0d6f5e08', 8500, 2, 1.2, DATE '2026-10-15', DATE '2026-11-15', 1.5, 'ACTIVE'),
-  ('97ba23b5-07d8-4b31-b428-7e33d6f42bca', '4b7d2c86-9e1a-43f2-8c67-5a0b3e9d1c09', 3800, 1, 1.0, NULL, NULL, NULL, 'ACTIVE'),
-  ('4dce2115-6fc4-40cb-8f27-e880e7052e47', 'a83c5e17-4b9d-4126-9f8a-2e1c6d0b3a10', 6200, 2, 1.2, NULL, NULL, NULL, 'ACTIVE'),
-  ('32d8dbe9-11c2-4ef5-9730-6392a761a518', '5d9b3a62-1c8e-4f47-8a2d-7b0e4c1f9d11', 3500, 1, 1.0, NULL, NULL, NULL, 'ACTIVE'),
-  ('8246f63d-9cb4-4f13-b78c-48e1e5d74519', 'e17c4a95-3b6d-42e8-9c14-0a5f2b8d6c12', 3600, 1, 1.0, NULL, NULL, NULL, 'ACTIVE');
+  ('f74de63e-7281-410a-a5a4-3f309b1d3f6c', '3f2a9c14-7b8e-4d21-9a05-1c6e0d3f4a01', 9000, 2, 1.2, DATE '2026-12-20', DATE '2027-01-05', 1.5, 1.00, 7, 'ACTIVE'),
+  ('34117256-6375-421b-9351-65a8d5c7e3e8', '8b1d6e27-2f4a-4c93-b6d1-0a2e7f5c1b02', 3200, 1, 1.2, NULL, NULL, 1.00, 1.00, 7, 'ACTIVE'),
+  ('13efd6bf-0a83-49dd-8111-21b342d079a9', 'c4e7a913-5d8b-42f6-8e0a-3b9c1d6f2a03', 6500, 1, 1.2, NULL, NULL, 1.00, 1.00, 7, 'ACTIVE'),
+  ('55e3306f-92e1-4212-8bef-49ad8592bd3c', '1a9f3c58-6e2d-4b74-9c31-5f8a0e7d3b04', 2800, 1, 1.0, NULL, NULL, 1.00, 1.00, 7, 'ACTIVE'),
+  ('a3e46c8e-b92a-43f7-a069-f46c8e21280d', '7d2b8e41-3a9c-4f16-8b52-6c1e9a0f4d05', 5200, 2, 1.0, NULL, NULL, 1.00, 1.00, 7, 'ACTIVE'),
+  ('a0a5a43d-5d44-4d13-be47-0b1fe843e941', '9e5c1a73-8b4d-42a9-b7e6-0f3c2d1a6b06', 4200, 2, 1.0, DATE '2026-12-15', DATE '2027-01-10', 1.5, 1.00, 7, 'ACTIVE'),
+  ('dd5ad037-1cc0-4bd4-937e-e3100ca5bad5', '2c8a4f19-7d3b-4e56-9a1c-8b0e5f2d3c07', 5800, 1, 1.2, NULL, NULL, 1.00, 1.00, 7, 'ACTIVE'),
+  ('dc1b7296-c13a-47de-a165-cf39b063d13f', '6f1e9b34-2a7c-48d5-b3e9-1c4a0d6f5e08', 8500, 2, 1.2, DATE '2026-10-15', DATE '2026-11-15', 1.5, 1.00, 7, 'ACTIVE'),
+  ('dd2678df-3879-4669-8a44-459c4767df19', '4b7d2c86-9e1a-43f2-8c67-5a0b3e9d1c09', 3800, 1, 1.0, NULL, NULL, 1.00, 1.00, 7, 'ACTIVE'),
+  ('b82cab2c-ab4f-405f-8158-342e081cc760', 'a83c5e17-4b9d-4126-9f8a-2e1c6d0b3a10', 6200, 2, 1.2, NULL, NULL, 1.00, 1.00, 7, 'ACTIVE'),
+  ('ea162dc4-86cf-4d04-bd55-ed2d5e751677', '5d9b3a62-1c8e-4f47-8a2d-7b0e4c1f9d11', 3500, 1, 1.0, NULL, NULL, 1.00, 1.00, 7, 'ACTIVE'),
+  ('89e22536-1acb-47f0-b51e-ce59409bd957', 'e17c4a95-3b6d-42e8-9c14-0a5f2b8d6c12', 3600, 1, 1.0, NULL, NULL, 1.00, 1.00, 7, 'ACTIVE');
 
 INSERT INTO property_images (property_id, image_url) VALUES
   ('3f2a9c14-7b8e-4d21-9a05-1c6e0d3f4a01', 'https://res.cloudinary.com/ddup7omgb/image/upload/w_1200,q_auto,f_auto/staysphere/seed/goa-villa-01/photo1.jpg'),
