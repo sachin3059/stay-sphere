@@ -44,6 +44,11 @@ export async function fetchHostProperties(token: string) {
   return apiData<Property[]>("/api/properties/host", { token });
 }
 
+/** Host edit flows — works when listing is unlisted (INACTIVE). */
+export async function fetchHostPropertyById(token: string, id: string) {
+  return apiData<Property>(`/api/properties/host/${id}`, { token });
+}
+
 export async function createProperty(
   token: string,
   body: CreatePropertyPayload,

@@ -106,7 +106,8 @@ export function AdminUsersPage() {
       <p className="mt-6 text-xs text-muted">
         Bootstrap the first admin with{" "}
         <code className="text-ink">STAYSPHERE_BOOTSTRAP_ADMIN_EMAIL</code> in repo{" "}
-        <code className="text-ink">.env</code> — see <code className="text-ink">docs/ADMIN.md</code>.
+        <code className="text-ink">.env</code> — see the <strong>Admin</strong> section in the repo{" "}
+        <code className="text-ink">README.md</code>.
       </p>
     </div>
   );

@@ -1,778 +1,477 @@
-# StaySphere — Distributed Booking Platform
+# StaySphere
 
-> A production-grade, microservices-based Airbnb-like platform built with Java 21 and Spring Boot, implementing concurrency-safe booking, event-driven architecture, dynamic pricing, and a smart waitlist system.
+Microservices property-booking platform (Airbnb-style): JWT auth, Postgres search, concurrency-safe bookings, Stripe payments, Kafka events, S3 listing media, and a React web UI.
 
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Microservices](#microservices)
-- [Key Engineering Features](#key-engineering-features)
-- [Database Design](#database-design)
-- [Event Flow](#event-flow)
-- [Prerequisites](#prerequisites)
-- [Getting Started](#getting-started)
-- [Running the Services](#running-the-services)
-- [API Reference](#api-reference)
-- [Project Structure](#project-structure)
-- [Engineering Decisions](#engineering-decisions)
+**Table of contents:** [Quick start](#quick-start) · [Architecture](#architecture) · [Development](#development) · [Operations](#operations) · [Integrations](#integrations) · [Tech stack](#tech-stack) · [Scripts](#scripts) · [Repository layout](#repository-layout)
 
 ---
 
-## Overview
+## Quick start
 
-StaySphere is a distributed property booking platform built to demonstrate real-world backend engineering patterns including:
+**Prerequisites:** JDK 21+, Docker Desktop (Compose v2), Node.js 20+
 
-- Distributed locking for concurrency-safe bookings
-- Event-driven communication between decoupled services
-- Dynamic pricing with seasonal and demand multipliers
-- Smart availability optimization using interval merging
-- Idempotent payment processing
-- Priority waitlist with automatic slot promotion
+```bash
+git clone https://github.com/sachin3059/stay-sphere.git
+cd stay-sphere
+cp env.template .env    # set JWT_SECRET (32+ chars) and integrations as needed
+```
+
+| Command | Purpose |
+|---------|---------|
+| `.\scripts\start-backend.ps1` (Windows) | Build JARs + `docker compose up` |
+| `./scripts/start-backend.sh` (Unix) | Same on Linux/macOS/Git Bash |
+| `cd frontend && npm ci && npm run dev` | React dev server |
+
+Optional: `cd frontend && cp .env.example .env` for OAuth / maps keys (`VITE_*`). Backend secrets stay in repo-root `.env`.
+
+| URL | What |
+|-----|------|
+| http://localhost:5173 | React (Vite dev) |
+| http://localhost:8080 | API gateway |
+| http://localhost | Full stack (`web` + nginx `/api` proxy) |
+
+Set `CORS_ALLOWED_ORIGINS=http://localhost:5173` in `.env` and restart **api-gateway** if the browser blocks API calls.
+
+**Smoke test:**
+
+```bash
+curl http://localhost:8080/api/auth/health
+curl http://localhost:8080/api/properties/health
+curl http://localhost:8080/api/bookings/health
+curl http://localhost:8080/api/payments/health
+```
+
+Frontend UI notes and route-level build order: [frontend/README.md](frontend/README.md).
 
 ---
 
 ## Architecture
 
+StaySphere splits the backend into **small services**. The **website** uses one entry point (**API gateway**). Services persist in **Postgres**, coordinate async work via **Kafka**, and use **Redis** for cache, locks, and logout denylist.
+
+### Three ideas
+
+1. **One front door** — Browser calls the gateway (`:8080`). It validates JWT and routes by path.
+2. **Each service owns its tables** — Booking needs a price? **HTTP** to property-service. Payment succeeded? Booking listens on **Kafka**.
+3. **No global DB transaction** — **Transactional outbox + Kafka** plus **idempotency** (choreography, not 2PC).
+
+### System diagram
+
+Read top → bottom: **browser → gateway → services → storage**. Dashed lines are outside the cluster.
+
+```mermaid
+flowchart TB
+  User([User browser])
+  UI[React app]
+  GW[API Gateway :8080]
+
+  subgraph SVC["Backend services"]
+    direction LR
+    AUTH[Auth]
+    PROP[Property<br/>listings · prices · calendar]
+    BOOK[Booking<br/>reservations · waitlist]
+    PAY[Payment<br/>Stripe]
+    NOTIF[Notifications<br/>email + inbox]
+  end
+
+  DB[(Postgres)]
+  REDIS[(Redis)]
+  KAFKA[Kafka events]
+
+  STRIPE[Stripe]
+  S3[(S3 photos)]
+
+  User --> UI --> GW
+  GW --> AUTH
+  GW --> PROP
+  GW --> BOOK
+  GW --> PAY
+  GW --> NOTIF
+
+  AUTH --> DB
+  PROP --> DB
+  BOOK --> DB
+  PAY --> DB
+  NOTIF --> DB
+
+  GW --> REDIS
+  PROP --> REDIS
+  BOOK --> REDIS
+
+  BOOK --> KAFKA
+  PAY --> KAFKA
+  KAFKA --> NOTIF
+  KAFKA --> PROP
+
+  PAY <--> STRIPE
+  UI -.->|presigned upload| S3
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Client Layer                      │
-│            Web · Mobile · Admin Portal               │
-└───────────────────────┬─────────────────────────────┘
-                        │
-┌───────────────────────▼─────────────────────────────┐
-│              API Gateway  (Port 8080)                │
-│         JWT Validation · Routing · Rate Limit        │
-└──┬──────┬──────┬──────┬──────┬──────┬──────┬────────┘
-   │      │      │      │      │      │      │
-   ▼      ▼      ▼      ▼      ▼      ▼      ▼
- Auth  Property Booking Payment Pricing Waitlist Notification
- 8081   8082    8083    8084    8085    8086     8087
-                                              Availability
-                                                 8088
-                        │
-┌───────────────────────▼─────────────────────────────┐
-│                  Event Bus (Kafka)                    │
-│   booking-events · payment-events · waitlist-events  │
-└─────────────────────────────────────────────────────┘
-                        │
-┌───────────────────────▼─────────────────────────────┐
-│                   Data Layer                         │
-│  PostgreSQL · Redis · S3 (media)     │
-└─────────────────────────────────────────────────────┘
+
+| Layer | What happens |
+|-------|----------------|
+| Top | React; API traffic goes through the gateway only. |
+| Services | Auth, property, booking, payment, notification — routed by URL. |
+| Postgres | One DB in dev (`staysphere`); each service has its own Flyway tables. |
+| Redis | Search cache, booking lock, gateway rate limits, JWT denylist. |
+| Kafka | Booking & payment **publish**; notifications & property **subscribe**. |
+| Dashed | Photos: browser → S3. Charges: payment ↔ Stripe. |
+
+**Local ports:** gateway `8080`, auth `8081`, property `8082`, booking `8083`, payment `8084`, notification `8087`.
+
+### Services
+
+| Service | Role |
+|---------|------|
+| **Gateway** | `/api/...`, rate limit, JWT, CORS |
+| **Auth** | Register, login, JWT, Google/GitHub, admin users |
+| **Property** | Listings, search, pricing, availability, S3 presign |
+| **Booking** | Reservations, overlap guards, waitlist |
+| **Payment** | Stripe PaymentIntents, refunds, outbox → Kafka |
+| **Notification** | In-app inbox + email (SES) from Kafka |
+
+Property exposes `/api/properties`, `/api/pricing`, `/api/availability` in one app. Booking includes waitlist in the same app.
+
+### Book and pay (happy path)
+
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant B as Booking
+  participant P as Payment
+  participant K as Kafka
+  participant N as Notifications
+  participant C as Calendar
+
+  U->>B: 1. Create booking (PENDING)
+  B->>K: 2. booking_created
+  K->>N: 3. Request received (email may fail in dev)
+
+  U->>P: 4. Pay with Stripe
+  P->>K: 5. payment_success
+  K->>B: 6. CONFIRMED
+  B->>K: 7. booking_confirmed
+  K->>N: 8. Confirmation
+  K->>C: 9. Block dates
 ```
+
+Statuses: `PENDING` → `CONFIRMED` or `CANCELLED` / `EXPIRED`. Backup: `POST /api/bookings/{id}/confirm` if Kafka is slow.
+
+### Outbox
+
+On payment success (payment-service), one transaction: update `payments`, insert `payment_outbox_events`. A job (~every 2s) publishes to Kafka. Consumers use `processed_events` so retries do not double-confirm.
+
+### Double booking
+
+1. Short **Redis lock** while creating a booking.  
+2. SQL overlap check.  
+3. **Postgres exclusion** — two confirmed stays cannot overlap the same property/dates.  
+4. **`Idempotency-Key`** on create booking.
+
+### Kafka topics
+
+| Topic | Publisher | Consumers | Purpose |
+|-------|-----------|-----------|---------|
+| `booking-events` | Booking | Notifications, property | Created / confirmed / cancelled |
+| `payment-events` | Payment | Booking, notifications | Pay success / fail / refund |
+| `waitlist-events` | Booking | Notifications | Waitlist slot offered |
+
+### Security
+
+- `Authorization: Bearer <JWT>` on protected routes.  
+- Roles: **GUEST**, **HOST**, **ADMIN**; hosts only edit listings where `hostId` matches the token.  
+- Logout adds the access token to a **Redis denylist**.
+
+### Extras
+
+- **Search** — Postgres full-text; Redis cache-aside.  
+- **Unlisted listing** — hidden from Explore; host edit via `GET /api/properties/host/{id}`.  
+- **Not 2PC** — choreography; future **reconciliation** job can compare Stripe vs DB if needed.
+
+Preview Mermaid on GitHub or VS Code, or use [Mermaid Live](https://mermaid.live).
 
 ---
 
-## Tech Stack
+## Development
 
-| Layer | Technology |
-|---|---|
-| Language | Java 21 |
-| Framework | Spring Boot 3.3.5 |
-| API Gateway | Spring Cloud Gateway |
-| Database | PostgreSQL 16 |
-| Cache / Locks | Redis 7 |
-| Messaging | Apache Kafka |
-| Search | PostgreSQL FTS (`tsvector` + `pg_trgm`) |
-| ORM | Spring Data JPA + Hibernate |
-| Security | Spring Security + JWT (jjwt 0.12.3) |
-| Email | Amazon SES (SMTP) |
-| Media | S3 presigned upload (property-service) |
-| Build | Gradle (multi-module) |
-| Containerization | Docker + Docker Compose |
+### Environment
 
----
+Single source of truth: **repo-root `.env`** (copy `env.template`; never commit). Docker loads it via `env_file`; Spring `local` profile can import `../.env`.
 
-## Microservices
+Minimum for local smoke test: `JWT_SECRET` (32+ characters), `POSTGRES_*` (defaults match Compose), Stripe test keys if testing pay (`PAYMENT_GATEWAY=stripe`). Full variable list: `env.template`.
 
-| Service | Port | Responsibility |
-|---|---|---|
-| api-gateway | 8080 | JWT validation, routing, rate limiting |
-| auth-service | 8081 | Registration, login, JWT + refresh tokens |
-| property-service | 8082 | Listings, search, images, **availability**, **pricing** (`/api/availability`, `/api/pricing`) |
-| booking-service | 8083 | Bookings, Redis locking, **waitlist** (`/api/waitlist`) |
-| payment-service | 8084 | Idempotent payment processing |
-| notification-service | 8087 | Email via SMTP, Kafka consumers |
-
----
-
-## Key Engineering Features
-
-### 1. Concurrency-Safe Booking with Redis Distributed Locks
-
-When two users attempt to book the same property for overlapping dates simultaneously, only one should succeed. This is solved using Redis SETNX (Set if Not Exists):
-
-```
-User A ──► SETNX lock:booking:propertyId:checkIn:checkOut ──► Lock acquired (TTL 10 min)
-User B ──► SETNX lock:booking:propertyId:checkIn:checkOut ──► Lock exists → BookingConflictException
-```
-
-- Lock key format: `lock:booking:{propertyId}:{checkIn}:{checkOut}`
-- TTL: 10 minutes — auto-expires if service crashes
-- Lock released on: booking confirmed, booking failed, booking cancelled
-- `@Version` optimistic locking on Booking entity as second layer of protection
-
-### 2. Event-Driven Architecture with Kafka
-
-Services communicate asynchronously through Kafka topics. No service calls another service directly.
-
-```
-booking-service  ──► booking-events  ──► notification-service (email guest)
-                                     ──► availability-service (block dates)
-                                     ──► waitlist-service (on cancellation)
-
-payment-service  ──► payment-events  ──► booking-service (auto-confirm), notification-service (payment receipt)
-
-waitlist-service ──► waitlist-events ──► notification-service (slot available)
-```
-
-**Topics:**
-- `booking-events` — booking_created, booking_confirmed, booking_cancelled
-- `payment-events` — payment_success, payment_failed, payment_refunded
-- `waitlist-events` — slot_offered
-
-### 3. Smart Availability Optimizer (O(n log n) Interval Merge)
-
-Instead of checking availability date by date, the system computes all available date ranges at once using an interval merge algorithm:
-
-```
-Input (blocked intervals):  [Apr 5–10], [Apr 8–15], [Apr 20–25]
-After merge:                [Apr 5–15], [Apr 20–25]
-Available gaps:             [Apr 1–5],  [Apr 15–20], [Apr 25–30]
-```
-
-**Algorithm steps:**
-1. Sort blocked intervals by start date — O(n log n)
-2. Merge overlapping intervals — O(n)
-3. Find gaps between merged intervals — O(n)
-4. Cache result in Redis, invalidate on new booking
-
-### 4. Dynamic Pricing Engine
-
-Price is calculated as:
-
-```
-Final Price = Base Price × Weekend Multiplier × Peak Season Multiplier × Long Stay Discount
-
-Example:
-Base price:           ₹2,500/night
-Weekend multiplier:   ×1.3  (Friday/Saturday nights)
-Peak season:          ×1.5  (Dec 15 – Jan 5)
-Long stay discount:   ×0.9  (7+ nights)
-
-Final price: ₹2,500 × 1.3 × 1.5 × 0.9 = ₹4,387/night
-```
-
-### 5. Idempotent Payment Processing
-
-The same payment request sent multiple times only processes once:
-
-```
-Request 1: idempotencyKey=pay-booking-123 → Creates payment, returns SUCCESS
-Request 2: idempotencyKey=pay-booking-123 → Finds existing, returns same SUCCESS
-Request 3: idempotencyKey=pay-booking-123 → Finds existing, returns same SUCCESS
-```
-
-Database has a unique constraint on `idempotency_key` as a hard guarantee.
-
-### 6. Priority Waitlist with TTL Auto-Promotion
-
-When a booking is cancelled:
-
-```
-booking_cancelled event published
-        ↓
-waitlist-service consumes event
-        ↓
-First guest in queue → status: OFFERED, slot_expires_at: now + 30 min
-        ↓
-waitlist-events: slot_offered published
-        ↓
-notification-service sends email to guest
-        ↓
-If guest doesn't book in 30 min → @Scheduled job expires slot
-        ↓
-Next guest in queue gets the offer
-```
-
----
-
-## Database Design
-
-### Tables
-
-```sql
--- Auth Service
-users (id, email, password, full_name, role, created_at)
-refresh_tokens (id, user_id, token, expires_at, created_at)
-
--- Property Service
-properties (id, host_id, title, description, city, country,
-            address, latitude, longitude, price_per_night,
-            max_guests, bedrooms, bathrooms, property_type,
-            status, created_at)
-property_amenities (property_id, amenity)
-availability (id, property_id, start_date, end_date, status)
-
--- Booking Service
-bookings (id, property_id, guest_id, host_id, check_in,
-          check_out, total_guests, total_price, price_per_night,
-          status, idempotency_key, version, confirmed_at,
-          cancelled_at, created_at)
-
--- Payment Service
-payments (id, booking_id, guest_id, host_id, idempotency_key,
-          amount, currency, status, payment_method,
-          transaction_id, failure_reason, version,
-          processed_at, created_at)
-
--- Pricing Service
-pricing_rules (id, property_id, base_price, weekend_multiplier,
-               peak_season_multiplier, peak_season_start,
-               peak_season_end, minimum_stay, long_stay_discount,
-               long_stay_threshold_nights, status)
-
--- Waitlist Service
-waitlist_entries (id, property_id, guest_id, check_in,
-                  check_out, total_guests, queue_position,
-                  status, slot_offered_at, slot_expires_at,
-                  created_at)
-
--- Notification Service
-notifications (id, recipient_id, recipient_email, subject,
-               message, notification_type, status,
-               reference_id, error_message, sent_at, created_at)
-
--- Availability Service
-blocked_dates (id, property_id, start_date, end_date,
-               reason, reference_id, created_at)
-```
-
-### Key Indexes
-
-```sql
--- Fast conflict detection for booking
-INDEX idx_booking_property ON bookings(property_id)
-INDEX idx_booking_guest ON bookings(guest_id)
-
--- Fast availability lookup
-INDEX idx_availability_property ON availability(property_id, start_date, end_date)
-
--- Idempotency fast lookup
-INDEX idx_payment_idempotency ON payments(idempotency_key)
-
--- Waitlist queue ordering
-INDEX idx_waitlist_property ON waitlist_entries(property_id, check_in, queue_position)
-```
-
----
-
-## Event Flow
-
-### Complete Booking Flow (Happy Path)
-
-```
-1. Guest calls POST /api/bookings
-        ↓
-2. booking-service acquires Redis lock
-        ↓
-3. Conflict check against bookings table
-        ↓
-4. Booking saved with status PENDING
-        ↓
-5. booking_created event → Kafka
-        ↓
-6. notification-service sends "Booking received" email
-        ↓
-7. Guest calls POST /api/payments
-        ↓
-8. payment-service checks idempotency key
-        ↓
-9. Payment processed (Stripe/Razorpay)
-        ↓
-10. payment_success event → Kafka
-        ↓
-11. booking-service auto-confirms (payment_success consumer); notification-service sends "Payment successful" email
-        ↓
-12. Booking status → CONFIRMED (or guest may POST /api/bookings/{id}/confirm if event was missed)
-        ↓
-13. Redis lock released
-        ↓
-14. booking_confirmed event → Kafka
-        ↓
-15. availability-service blocks the dates
-        ↓
-16. notification-service sends "Booking confirmed" to guest + host
-```
-
-### Cancellation Flow
-
-```
-1. Guest calls POST /api/bookings/{id}/cancel
-        ↓
-2. Booking status → CANCELLED
-        ↓
-3. booking_cancelled event → Kafka
-        ↓
-4. availability-service unblocks the dates
-        ↓
-5. waitlist-service checks if anyone is waiting
-        ↓
-6. First in queue gets slot_offered (30 min TTL)
-        ↓
-7. notification-service sends "Slot available!" email
-```
-
----
-
-## Prerequisites
-
-Make sure you have these installed:
+### Run infrastructure only (IDE)
 
 ```bash
-java -version      # Java 21+
-docker -v          # Docker 24+
-docker compose version  # Docker Compose v2+
-gradle -v          # Gradle 8+ (or use wrapper ./gradlew)
+docker compose up -d postgres redis zookeeper kafka
 ```
 
----
-
-## Getting Started
-
-### Step 1 — Clone the repository
+From `backend/`:
 
 ```bash
-git clone https://github.com/sachin3059/stay-sphere.git
-cd stay-sphere
-```
-
-### Step 2 — Start infrastructure with Docker Compose
-
-**Git Bash / Linux / macOS:**
-
-```bash
-./scripts/start-backend.sh
-```
-
-**Windows PowerShell:**
-
-```powershell
-.\scripts\start-backend.ps1
-```
-
-Or manually (build JARs once on your PC, then start Docker — avoids Gradle downloads inside Docker):
-
-```bash
-cd backend && ./gradlew bootJar -x test && cd ..
-docker compose up -d --build
-```
-
-Requires **Docker Desktop running** and **JDK 21**. Ensure repo-root `.env` exists.
-
-This starts:
-- PostgreSQL in Docker (host port **5433** by default; internal `postgres:5432`)
-- Redis on port 6379
-- Apache Kafka on port 9092
-- Zookeeper on port 2181
-
-Verify all containers are running:
-
-```bash
-docker compose ps
-```
-
-Expected output:
-```
-staysphere-postgres        Running
-staysphere-redis           Running
-staysphere-zookeeper       Running
-staysphere-kafka           Running
-```
-
-### Step 3 — Configure environment variables
-
-All secrets and integration keys live in **one file** at the repo root: **`.env`** (copy from `env.template`). Do not commit `.env`.
-
-- **Docker Compose** loads `.env` for every service (`env_file: .env`).
-- **Local IDE runs** (`SPRING_PROFILES_ACTIVE=local`) import the same `.env` via `application-local.yml`.
-
-Do not put real credentials in `application.yml` or `docker-compose.yml`.
-
-### Step 4 — Frontend (React)
-
-```bash
-cd frontend
-cp .env.example .env
-npm install
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173). Set `CORS_ALLOWED_ORIGINS=http://localhost:5173` in repo-root `.env` and restart **api-gateway** if the browser blocks API calls.
-
-See [frontend/README.md](frontend/README.md) for structure and the incremental build plan.
-
----
-
-## Running the Services
-
-Open a separate terminal for each service or use IntelliJ's run configurations.
-
-### Option A — Run individually (recommended for development)
-
-```bash
-cd backend
-
-# Terminal 1 — Auth Service
 ./gradlew :auth-service:bootRun
-
-# Terminal 2 — Property Service (listings, search, availability, pricing)
 ./gradlew :property-service:bootRun
-
-# Terminal 3 — Booking Service (includes waitlist)
 ./gradlew :booking-service:bootRun
-
-# Terminal 4 — Payment Service
 ./gradlew :payment-service:bootRun
-
-# Terminal 5 — Notification Service
 ./gradlew :notification-service:bootRun
-
-# Terminal 6 — API Gateway (start last)
 ./gradlew :api-gateway:bootRun
 ```
 
-### Option B — Build all services
+On the host use `SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5433/staysphere` (see `env.template`).
+
+### Reset local data (optional)
+
+```powershell
+.\scripts\reset-local-data.ps1
+```
+
+Truncates app tables (keeps Flyway history), flushes Redis, recreates Kafka topics, restarts services. Does **not** delete S3 objects.
+
+### Manual E2E checklist
+
+1. Register → optional **Become host**  
+2. Create listing, pricing, [S3 photos](#amazon-s3-listing-media)  
+3. Publish listing (`ACTIVE`)  
+4. Book as guest with dates  
+5. Pay with Stripe test card `4242 4242 4242 4242`  
+6. Trip **CONFIRMED**; host calendar blocked; `GET /api/notifications/my`
+
+### Logs
 
 ```bash
-cd backend && ./gradlew build -x test
+docker compose logs -f api-gateway property-service booking-service payment-service notification-service
+docker logs staysphere-booking --tail 100
 ```
 
-### Verify services are running
+Periodic SQL on `*_outbox_events` every ~2s is normal (outbox publishers).
+
+### Tests and CI
 
 ```bash
-curl http://localhost:8081/api/auth/health
-curl http://localhost:8082/api/properties/health
-curl http://localhost:8083/api/bookings/health
-curl http://localhost:8084/api/payments/health
-curl http://localhost:8085/api/pricing/health
-curl http://localhost:8086/api/waitlist/health
-curl http://localhost:8087/api/notifications/health
-curl http://localhost:8088/api/availability/health
+cd backend && ./gradlew build
+cd frontend && npm run build
 ```
 
-All should return `{service-name} service is running`.
+GitHub Actions (`.github/workflows/ci.yml`) runs both on push/PR to `main`.
 
 ---
 
-## API Reference
+## Operations
 
-### Auth Service — Port 8081
+### Run modes
 
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/auth/register` | None | Register new user (always **GUEST**) |
-| POST | `/api/auth/login` | None | Login, returns JWT |
-| POST | `/api/auth/become-host` | JWT | Upgrade **GUEST** → **HOST** (new tokens) |
-| POST | `/api/auth/refresh` | None | Refresh JWT token |
-| GET | `/api/auth/health` | None | Health check |
+| Mode | Frontend | API | Notes |
+|------|----------|-----|--------|
+| **Dev** | `npm run dev` :5173 | Gateway :8080 | Day-to-day development |
+| **Docker all-in-one** | `web` :80 | nginx → `/api` → gateway | `docker compose up -d --build` |
+| **Public domain** | Static or `web` | `api.` subdomain or same-origin `/api` | Needs always-on host; set `VITE_API_URL` / CORS |
 
-**Register request:**
-```json
-{
-  "email": "user@example.com",
-  "password": "password123",
-  "fullName": "John Doe",
-  "role": "GUEST"
-}
+A hosted SPA **cannot** call `localhost:8080` on your laptop — build with `VITE_API_URL` or same-origin `/api`.
+
+### Docker production-style (one machine)
+
+1. `cp env.template .env` and set production values.  
+2. `docker compose up -d --build`  
+3. Open **http://localhost** (see `frontend/nginx.conf`).
+
+Compose build args: `VITE_GOOGLE_CLIENT_ID`, `VITE_GITHUB_CLIENT_ID`, `VITE_OLA_MAPS_API_KEY`. Leave `VITE_API_URL` empty for same-origin API.
+
+### Environment matrix
+
+| Variable | Consumers | Purpose |
+|----------|-----------|---------|
+| `JWT_SECRET` | Gateway + all services | Same 32+ char secret everywhere |
+| `POSTGRES_*`, `SPRING_DATASOURCE_*` | Backend | Database |
+| `CORS_ALLOWED_ORIGINS` | api-gateway | SPA origins when API ≠ UI host |
+| `FRONTEND_BASE_URL` | auth-service | Password reset / verify links |
+| `STRIPE_*`, `PAYMENT_GATEWAY` | payment-service | [Stripe](#stripe) |
+| `AWS_*`, `STAYSPHERE_S3_*` | property-service | [S3 media](#amazon-s3-listing-media) |
+| `SMTP_*`, `MAIL_FROM_*` | auth, notification | [SES](#amazon-ses-email) |
+| `GOOGLE_CLIENT_ID`, `GITHUB_*` | auth + frontend build | [OAuth](#oauth-google-and-github) |
+| `STAYSPHERE_BOOTSTRAP_ADMIN_EMAIL` | auth-service | [Admin](#admin) |
+| `GATEWAY_RATE_LIMIT_*` | api-gateway | Redis token bucket |
+
+Prefer IAM roles for S3 on cloud hosts; use SSM Parameter Store or secrets manager for production — never commit `.env`.
+
+### Split hosting (frontend build)
+
+```bash
+cd frontend
+npm ci
+VITE_API_URL=https://api.example.com npm run build   # API on another host
+VITE_API_URL= npm run build                            # same host, /api proxy
 ```
 
-**Login response:**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiJ9...",
-  "email": "user@example.com",
-  "role": "GUEST",
-  "fullName": "John Doe"
-}
-```
+Deploy `dist/` to static hosting; set `CORS_ALLOWED_ORIGINS` to the SPA origin.
+
+### Caching and rate limiting
+
+- Property detail / search: Redis cache-aside with catalog generation invalidation.  
+- Bloom filter for active property IDs on public get-by-id.  
+- Gateway: `GATEWAY_RATE_LIMIT_REPLENISH` / `GATEWAY_RATE_LIMIT_BURST`.
+
+### Health checks (via gateway)
+
+`/api/auth/health` · `/api/properties/health` · `/api/bookings/health` · `/api/payments/health` · `/api/notifications/health`
+
+Direct service actuator: `/actuator/health` when not going through the gateway.
+
+### Production acceptance checklist
+
+- [ ] Register / login (email or OAuth)  
+- [ ] Explore → book → pay (Stripe test)  
+- [ ] Booking `CONFIRMED` (webhook or `payment_success` consumer)  
+- [ ] S3 upload + public read on `properties/*`  
+- [ ] SES verified sender/domain; out of sandbox or verified recipients  
+- [ ] Admin bootstrap (`STAYSPHERE_BOOTSTRAP_ADMIN_EMAIL`)  
+- [ ] Stripe webhook on public URL with `STRIPE_WEBHOOK_SECRET`
+
+### Security notes
+
+- PCI: card data stays on Stripe Elements; no PAN in StaySphere DB.  
+- Rotate `JWT_SECRET` and API keys if leaked.  
+- Hosting a public API is optional; a private `.env` and local Docker stack are enough for development and review.
 
 ---
 
-### Property Service — Port 8082
+## Integrations
 
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/properties` | JWT | Create listing |
-| GET | `/api/properties` | None | Get all listings |
-| GET | `/api/properties/{id}` | None | Get listing by ID |
-| GET | `/api/properties/host` | JWT | Get host's listings |
-| GET | `/api/properties/search` | None | Search by city/price/guests |
-| POST | `/api/properties/{id}/images` | JWT | Upload images |
+All secrets in repo-root `.env` (`env.template`).
 
-**Search query params:**
-```
-/api/properties/search?city=Pune&guests=2&minPrice=1000&maxPrice=5000
+### Stripe
+
+```env
+PAYMENT_GATEWAY=stripe
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
-**Create property request:**
-```json
-{
-  "title": "Cozy Apartment in Pune",
-  "description": "Beautiful apartment in Koregaon Park",
-  "city": "Pune",
-  "country": "India",
-  "address": "Lane 5, Koregaon Park, Pune 411001",
-  "latitude": 18.5362,
-  "longitude": 73.8938,
-  "pricePerNight": 2500.00,
-  "maxGuests": 4,
-  "bedrooms": 2,
-  "bathrooms": 1,
-  "propertyType": "APARTMENT",
-  "amenities": ["WiFi", "AC", "Kitchen", "Parking"]
-}
+Restart **payment-service** after changes.
+
+**Local webhooks:**
+
+```bash
+stripe listen --forward-to localhost:8080/api/payments/webhooks/stripe
 ```
+
+Use the printed `whsec_...` as `STRIPE_WEBHOOK_SECRET`.
+
+**Production webhook URL:** `https://<host>/api/payments/webhooks/stripe`  
+Events: `payment_intent.succeeded`, `payment_intent.payment_failed`, `charge.refunded`.
+
+**Test card:** `4242 4242 4242 4242`, any future expiry, any CVC.
+
+| Method | Path | Auth |
+|--------|------|------|
+| GET | `/api/payments/stripe/config` | Public |
+| POST | `/api/payments/stripe/intent` | Bearer |
+| POST | `/api/payments/stripe/confirm/{paymentId}` | Bearer |
+| POST | `/api/payments/webhooks/stripe` | Stripe signature |
+
+Checkout publishes `payment_success` to Kafka; booking-service confirms idempotently.
+
+#### Refunds
+
+`POST /api/payments/{paymentId}/refund` — JWT required. Guest or host on the payment when booking is **CANCELLED** and payment **SUCCESS**. Flow: cancel booking → refund from trip detail or host reservations.
+
+### Amazon S3 (listing media)
+
+Presigned direct upload; URLs in `property_images`.
+
+1. `POST /api/properties/{id}/images/presign` (HOST, JWT)  
+2. Browser `PUT` to `uploadUrl`  
+3. `POST /api/properties/{id}/images/confirm` with `objectKeys`
+
+**Setup:** bucket in `AWS_REGION`; IAM `PutObject` / `GetObject` / `DeleteObject` on `arn:aws:s3:::BUCKET/properties/*`; CORS `PUT`/`GET`/`HEAD` from SPA origins; **public read** on `properties/*` (bucket policy or CloudFront + `STAYSPHERE_S3_PUBLIC_BASE_URL`).
+
+Keys: `properties/{propertyId}/{uuid}-{filename}`. Limits: `STAYSPHERE_S3_MAX_IMAGE_BYTES` (default 10 MB), video up to 500 MB. Types: JPEG, PNG, WebP, GIF, MP4, WebM, MOV.
+
+### Amazon SES (email)
+
+```env
+SMTP_HOST=email-smtp.ap-south-1.amazonaws.com
+SMTP_PORT=587
+SMTP_USERNAME=...
+SMTP_PASSWORD=...
+MAIL_FROM_EMAIL=noreply@yourdomain.com
+MAIL_FROM_NAME=StaySphere
+```
+
+Verify domain or sender in SES. **Sandbox** only delivers to verified addresses (554 if not verified). Without SMTP, auth logs reset links; notifications stay in-app with email status **FAILED**.
+
+### OAuth (Google and GitHub)
+
+**Backend:** `GOOGLE_CLIENT_ID`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`  
+**Frontend:** `VITE_GOOGLE_CLIENT_ID`, `VITE_GITHUB_CLIENT_ID`
+
+Google: Web client; origin `http://localhost:5173` (+ production). `POST /api/auth/oauth/google` with `{ "idToken": "..." }`.
+
+GitHub: callback `http://localhost:5173/auth/github/callback`. `POST /api/auth/oauth/github` with `{ "code": "..." }`.
+
+Email verification: `POST /api/auth/verify-email`. Password reset: `/forgot-password`, `/reset-password?token=...` — set `FRONTEND_BASE_URL`.
+
+### Maps (host listings)
+
+`VITE_OLA_MAPS_API_KEY` in `frontend/.env` for location picker on create/edit listing.
+
+### Admin
+
+```env
+STAYSPHERE_BOOTSTRAP_ADMIN_EMAIL=you@example.com
+```
+
+Restart **auth-service**, register/sign in with that email, then **sign out and in** for `ADMIN` in the JWT.
+
+**UI:** `/admin`, `/admin/users`, `/admin/listings`
+
+| Method | Path |
+|--------|------|
+| GET | `/api/admin/users` |
+| PATCH | `/api/admin/users/{userId}/role` |
+| GET | `/api/admin/properties` |
+| PATCH | `/api/admin/properties/{id}/status` |
+
+Only **ACTIVE** listings appear in guest search.
 
 ---
 
-### Booking Service — Port 8083
+## Tech stack
 
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/bookings` | JWT | Create booking |
-| POST | `/api/bookings/{id}/confirm` | JWT | Confirm booking |
-| POST | `/api/bookings/{id}/cancel` | JWT | Cancel booking |
-| GET | `/api/bookings/{id}` | JWT | Get booking by ID |
-| GET | `/api/bookings/my` | JWT | Get my bookings |
-| GET | `/api/bookings/property/{propertyId}` | JWT | Get property bookings |
-
-**Create booking request:**
-```json
-{
-  "propertyId": "962b20d6-8b68-44e1-b288-536f764a99ce",
-  "hostId": "host@example.com",
-  "checkIn": "2026-05-01",
-  "checkOut": "2026-05-05",
-  "totalGuests": 2,
-  "pricePerNight": 2500.00
-}
-```
-
-**Booking response:**
-```json
-{
-  "id": "8d0a4e8f-bba1-4933...",
-  "propertyId": "962b20d6...",
-  "guestId": "guest@example.com",
-  "checkIn": "2026-05-01",
-  "checkOut": "2026-05-05",
-  "totalPrice": 10000.00,
-  "status": "PENDING",
-  "idempotencyKey": "uuid-here"
-}
-```
+| Layer | Technology |
+|-------|------------|
+| Backend | Java 21, Spring Boot 3.3, Spring Cloud Gateway |
+| Data | PostgreSQL 16, Redis 7, Flyway |
+| Messaging | Apache Kafka, transactional outbox |
+| Payments | Stripe PaymentIntents |
+| Media | S3 presigned upload |
+| Email | Amazon SES (SMTP) |
+| Frontend | React 19, Vite 6, TypeScript, Tailwind 4 |
+| Build | Gradle multi-module, Docker Compose, GitHub Actions |
 
 ---
 
-### Payment Service — Port 8084
+## Scripts
 
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/payments` | JWT | Process payment |
-| POST | `/api/payments/{id}/refund` | JWT | Refund payment |
-| GET | `/api/payments/{id}` | JWT | Get payment by ID |
-| GET | `/api/payments/booking/{bookingId}` | None | Get payment by booking |
-
-**Payment request:**
-```json
-{
-  "bookingId": "8d0a4e8f-bba1-4933...",
-  "hostId": "host@example.com",
-  "idempotencyKey": "pay-booking-8d0a4e8f",
-  "amount": 10000.00,
-  "currency": "INR",
-  "paymentMethod": "UPI"
-}
-```
-
-**Supported payment methods:** `CREDIT_CARD`, `DEBIT_CARD`, `UPI`, `NET_BANKING`, `WALLET`
+| Script | Purpose |
+|--------|---------|
+| `scripts/start-backend.ps1` / `.sh` | Build JARs + `docker compose up -d --build` |
+| `scripts/reset-local-data.ps1` | Truncate app tables, flush Redis, recreate Kafka topics, restart services (`reset-local-data.sql` is the SQL step) |
 
 ---
 
-### Pricing Service — Port 8085
-
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/pricing/rules` | JWT | Create pricing rule |
-| GET | `/api/pricing/rules/{propertyId}` | None | Get rule for property |
-| POST | `/api/pricing/calculate` | None | Calculate price for dates |
-
-**Create pricing rule:**
-```json
-{
-  "propertyId": "962b20d6...",
-  "basePrice": 2500.00,
-  "weekendMultiplier": 1.3,
-  "peakSeasonMultiplier": 1.5,
-  "peakSeasonStart": "2026-12-15",
-  "peakSeasonEnd": "2027-01-05",
-  "minimumStay": 2,
-  "longStayDiscount": 0.9,
-  "longStayThresholdNights": 7
-}
-```
-
-**Calculate price request:**
-```json
-{
-  "propertyId": "962b20d6...",
-  "checkIn": "2026-12-20",
-  "checkOut": "2026-12-27"
-}
-```
-
-**Calculate price response:**
-```json
-{
-  "propertyId": "962b20d6...",
-  "basePrice": 2500.00,
-  "finalPricePerNight": 4387.50,
-  "totalPrice": 30712.50,
-  "totalNights": 7,
-  "appliedRules": [
-    "Weekend surcharge: ×1.3",
-    "Peak season surcharge: ×1.5",
-    "Long stay discount: ×0.9"
-  ]
-}
-```
-
----
-
-### Waitlist Service — Port 8086
-
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/api/waitlist` | JWT | Join waitlist |
-| DELETE | `/api/waitlist/{id}` | JWT | Leave waitlist |
-| GET | `/api/waitlist/my` | JWT | Get my waitlist entries |
-| GET | `/api/waitlist/property/{id}` | None | Get property waitlist |
-
-**Join waitlist request:**
-```json
-{
-  "propertyId": "962b20d6...",
-  "checkIn": "2026-05-01",
-  "checkOut": "2026-05-05",
-  "totalGuests": 2
-}
-```
-
----
-
-### Availability Service — Port 8088
-
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | `/api/availability/{propertyId}` | None | Get available ranges |
-| GET | `/api/availability/{propertyId}/check` | None | Check specific dates |
-| POST | `/api/availability/block` | JWT | Host blocks dates |
-| GET | `/api/availability/{propertyId}/blocked` | None | Get blocked dates |
-
-**Get available ranges:**
-```
-/api/availability/{propertyId}?from=2026-04-01&to=2026-04-30
-```
-
-**Response:**
-```json
-[
-  { "from": "2026-04-01", "to": "2026-04-10", "nights": 9 },
-  { "from": "2026-04-15", "to": "2026-04-20", "nights": 5 },
-  { "from": "2026-04-25", "to": "2026-04-30", "nights": 5 }
-]
-```
-
----
-
-## Project Structure
+## Repository layout
 
 ```
 stay-sphere/
-├── frontend/                 # React SPA (Vite)
-├── backend/                  # Gradle multi-project — all JVM services
-│   ├── common/
-│   ├── api-gateway/
-│   ├── auth-service/
-│   ├── property-service/     # listings, search, availability, pricing
-│   ├── booking-service/      # bookings + waitlist
-│   ├── payment-service/
-│   ├── notification-service/
-│   ├── build.gradle
-│   └── settings.gradle
-├── docs/                     # ADRs, deployment, roadmap
-├── scripts/                  # start-backend, demo seed
-├── .github/workflows/        # CI (backend + frontend)
-├── docker-compose.yml        # full stack (infra + backend + web)
-├── env.template              # copy to .env at repo root
-└── README.md
+├── backend/           # Gradle: common + auth, property, booking, payment, notification, api-gateway
+├── frontend/          # React SPA (see frontend/README.md)
+├── docker-compose.yml
+├── env.template       # copy to .env
+└── scripts/           # start-backend, reset-local-data (optional)
 ```
-
-Service boundaries (six deployables): [docs/adr/003-service-boundaries.md](docs/adr/003-service-boundaries.md).
-
----
-
-## Engineering Decisions
-
-### Why Redis for distributed locking instead of database locks?
-
-Database-level locks (SELECT FOR UPDATE) hold a connection for the entire lock duration, limiting throughput. Redis SETNX is a single atomic O(1) operation with automatic TTL expiry — no connection held, no deadlock risk, horizontally scalable. If the service crashes, the TTL ensures the lock auto-releases after 10 minutes.
-
-### Why Kafka instead of synchronous REST calls between services?
-
-Synchronous calls create tight coupling — if notification-service is down, booking confirmation fails. With Kafka, booking-service publishes an event and returns immediately. Notification-service, availability-service, and waitlist-service process the event independently at their own pace. This gives fault isolation, independent scalability, and natural retry mechanisms.
-
-### Why idempotency keys for payments?
-
-Network failures can cause payment requests to be retried. Without idempotency keys, a guest could be charged twice for the same booking if the first request times out but actually succeeded. The UUID idempotency key with a unique database constraint guarantees the same request is only processed once, regardless of how many times it's sent.
-
-### Why interval merge for availability instead of per-date queries?
-
-Querying availability date by date for a 30-day window would require 30 database queries. The interval merge algorithm computes all available ranges in a single query + O(n log n) in-memory computation, then caches the result in Redis. Subsequent requests hit the cache until a new booking invalidates it.
-
-### Why separate availability-service instead of using property-service's availability table?
-
-Each service owns its data. Property-service manages listing metadata. Availability-service manages the calendar state — which dates are blocked, why, and by which booking. This separation means availability logic (interval merge, Redis caching, Kafka consumption) can evolve independently without touching property management code.
-
----
-
-## Environment Variables Reference
-
-| Variable | Service | Description |
-|---|---|---|
-| `spring.datasource.url` | All | PostgreSQL connection URL |
-| `spring.datasource.username` | All | DB username (default: staysphere) |
-| `spring.datasource.password` | All | DB password (default: staysphere123) |
-| `spring.data.redis.host` | Booking, Availability | Redis host (default: localhost) |
-| `spring.kafka.bootstrap-servers` | Booking, Payment, Waitlist, Notification, Availability | Kafka broker |
-| `jwt.secret` | All | 256-bit hex JWT signing key |
-| `jwt.expiration` | All | Token expiry in ms (default: 86400000 = 24h) |
-| `SMTP_*`, `MAIL_FROM_EMAIL` | Auth, Notification | SES SMTP + verified domain/sender |
-| `AWS_S3_BUCKET`, `AWS_REGION` | Property | S3 bucket for listing media (`docs/S3_MEDIA.md`) |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Property | IAM credentials for presign (local/dev) |
-| `STAYSPHERE_S3_PUBLIC_BASE_URL` | Property | Optional CloudFront base URL for public media links |
 
 ---
 
 ## License
 
-MIT License — free to use, modify, and distribute.
-
----
-
-*Built with Java 21, Spring Boot 3.3.5, and a lot of distributed systems thinking.*
+Portfolio / educational use; see repository defaults.

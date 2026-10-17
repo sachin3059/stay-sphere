@@ -68,11 +68,22 @@ public class PropertyController {
     }
 
     @GetMapping("/host")
+    @PreAuthorize("hasRole('HOST')")
     public ResponseEntity<ApiResponse<List<PropertyResponse>>> getHostProperties() {
         return ResponseEntity.ok(
                 ApiResponse.success("Host properties fetched successfully",
                         propertyService.getHostProperties(
                                 getCurrentUserId())));
+    }
+
+    @GetMapping("/host/{id}")
+    @PreAuthorize("hasRole('HOST')")
+    public ResponseEntity<ApiResponse<PropertyResponse>> getHostProperty(
+            @PathVariable String id) {
+        return ResponseEntity.ok(
+                ApiResponse.success("Property fetched successfully",
+                        propertyService.getHostProperty(
+                                id, getCurrentUserId())));
     }
 
     @GetMapping("/search")

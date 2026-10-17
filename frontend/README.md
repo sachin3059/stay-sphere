@@ -38,7 +38,7 @@ src/
 4. **Host** — create property + pricing
 5. **Booking & Stripe** — book, pay, my trips
 6. **Host ops & guest polish** — host reservations, resume pending payment
-7. **Listing photos** — S3 presigned direct upload on create + manage photos (`docs/S3_MEDIA.md`)
+7. **Listing photos** — S3 presigned direct upload ([Integrations → S3](../README.md#amazon-s3-listing-media))
 8. **Session** — refresh on 401 + proactive token refresh
 9. **Availability** — check dates, host calendar blocks
 10. **Pricing quote** — server calculate on book
@@ -50,7 +50,7 @@ src/
 16. **Explore UX** — gallery, map, sort, pagination
 17. **Social auth** — Google + GitHub, profile page
 18. **Admin** — users, listing moderation, health links
-19. **Production** — Docker `web` on :80, CI frontend build, `docs/DEPLOYMENT.md` (current)
+19. **Production** — Docker `web` on :80, CI frontend build — [Operations](../README.md#operations)
 
 ### Booking flow (manual test)
 
@@ -68,7 +68,7 @@ Routes: `/properties/:id/book`, `/bookings/:id/pay`, `/bookings/my`, `/bookings/
 
 ### Step 7 (photos)
 
-Set `AWS_S3_BUCKET`, `AWS_REGION`, and IAM credentials in repo-root `.env` (see `docs/S3_MEDIA.md`) and restart **property-service**. Then:
+Set `AWS_S3_BUCKET`, `AWS_REGION`, and IAM credentials in repo-root `.env` (see [Integrations → S3](../README.md#amazon-s3-listing-media)) and restart **property-service**. Then:
 
 - **List a property** — choose photos before **Publish listing**, or
 - **My listings** → **Add photos** / **Manage photos** (`/host/listings/:id/photos`).
@@ -112,7 +112,7 @@ Restart **property-service** after pulling backend changes (`PUT /api/properties
 ### Step 15 (refunds)
 
 - Cancel a **CONFIRMED** paid trip on **Trip details**, then **Issue refund** (guest) or use **Reservations** as host.
-- Policy: `docs/PAYMENT_REFUNDS.md`. Restart **payment-service** after backend auth changes.
+- Policy: [Integrations → Refunds](../README.md#refunds). Restart **payment-service** after backend auth changes.
 
 ### Step 16 (explore UX)
 
@@ -121,14 +121,14 @@ Restart **property-service** after pulling backend changes (`PUT /api/properties
 
 ### Step 17 (social auth)
 
-Set `VITE_GOOGLE_CLIENT_ID` / `VITE_GITHUB_CLIENT_ID` and matching secrets in repo `.env` — see `docs/OAUTH.md`. Login/register show social buttons when configured.
+Set `VITE_GOOGLE_CLIENT_ID` / `VITE_GITHUB_CLIENT_ID` and matching secrets in repo `.env` — see [Integrations → OAuth](../README.md#oauth-google-and-github). Login/register show social buttons when configured.
 
 ### Step 18 (admin)
 
-Set `STAYSPHERE_BOOTSTRAP_ADMIN_EMAIL` in repo `.env`, restart auth-service, sign in again — see `docs/ADMIN.md`. Menu → **Admin**.
+Set `STAYSPHERE_BOOTSTRAP_ADMIN_EMAIL` in repo `.env`, restart auth-service, sign in again — see [Integrations → Admin](../README.md#admin). Menu → **Admin**.
 
 ### Step 19 (production)
 
-`docker compose up -d --build` → app on **http://localhost** (nginx + `/api` proxy). See `docs/DEPLOYMENT.md`.
+`docker compose up -d --build` → app on **http://localhost** (nginx + `/api` proxy). See [Operations](../README.md#operations).
 
 **Later steps:** forgot password, rate limiting, date-range search on Explore (optional).

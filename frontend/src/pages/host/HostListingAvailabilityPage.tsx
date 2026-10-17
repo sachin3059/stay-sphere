@@ -6,7 +6,7 @@ import {
   fetchBlockedDates,
 } from "@/features/availability/api";
 import { fetchPropertyWaitlist } from "@/features/waitlist/api";
-import { fetchPropertyById } from "@/features/properties/api";
+import { fetchHostPropertyById } from "@/features/properties/api";
 import { ApiError } from "@/lib/api/types";
 import { useAuthStore } from "@/store/authStore";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -40,8 +40,8 @@ export function HostListingAvailabilityPage() {
   const [error, setError] = useState<string | null>(null);
 
   const { data: property, isLoading: loadingProperty } = useQuery({
-    queryKey: ["property", propertyId],
-    queryFn: () => fetchPropertyById(propertyId!),
+    queryKey: ["host-property", propertyId],
+    queryFn: () => fetchHostPropertyById(accessToken, propertyId!),
     enabled: Boolean(propertyId),
   });
 

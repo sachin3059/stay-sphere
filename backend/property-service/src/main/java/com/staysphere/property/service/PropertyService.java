@@ -88,6 +88,11 @@ public class PropertyService {
                 .collect(Collectors.toList());
     }
 
+    /** Host dashboard — includes unlisted (INACTIVE) listings. */
+    public PropertyResponse getHostProperty(String propertyId, String hostId) {
+        return mapToResponse(loadHostProperty(propertyId, hostId));
+    }
+
     public PropertyPageResponse searchProperties(
             String city,
             int guests,

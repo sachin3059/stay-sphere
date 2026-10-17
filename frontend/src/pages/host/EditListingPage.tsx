@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { hasOlaMapsKey } from "@/features/maps/olaMaps";
 import {
   fetchPricingRule,
-  fetchPropertyById,
+  fetchHostPropertyById,
   updateProperty,
   updatePropertyStatus,
   updatePricingRule,
@@ -54,9 +54,13 @@ export function EditListingPage() {
     longitude: 73.8938,
   });
 
-  const { data: property, isLoading } = useQuery({
-    queryKey: ["property", propertyId],
-    queryFn: () => fetchPropertyById(propertyId!),
+  const {
+    data: property,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["host-property", propertyId],
+    queryFn: () => fetchHostPropertyById(accessToken, propertyId!),
     enabled: Boolean(propertyId),
   });
 
@@ -172,9 +176,23 @@ export function EditListingPage() {
 
   if (!propertyId) return null;
 
-  if (isLoading || !property) {
+  if (isLoading) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-muted">Loading…</div>
+    );
+  }
+
+  if (isError || !property) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16">
+        <p className="text-red-600">Could not load this listing.</p>
+        <Link
+          to="/host/listings"
+          className="mt-4 inline-block text-sm font-medium text-brand-700 hover:underline"
+        >
+          ← My listings
+        </Link>
+      </div>
     );
   }
 

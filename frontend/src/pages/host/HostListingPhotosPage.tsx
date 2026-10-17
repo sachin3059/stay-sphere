@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import {
   deletePropertyImage,
-  fetchPropertyById,
+  fetchHostPropertyById,
   uploadPropertyImages,
 } from "@/features/properties/api";
 import { ApiError } from "@/lib/api/types";
@@ -21,8 +21,8 @@ export function HostListingPhotosPage() {
   const [error, setError] = useState<string | null>(null);
 
   const { data: property, isLoading } = useQuery({
-    queryKey: ["property", propertyId],
-    queryFn: () => fetchPropertyById(propertyId!),
+    queryKey: ["host-property", propertyId],
+    queryFn: () => fetchHostPropertyById(accessToken, propertyId!),
     enabled: Boolean(propertyId),
   });
 
@@ -30,7 +30,7 @@ export function HostListingPhotosPage() {
     mutationFn: (url: string) =>
       deletePropertyImage(accessToken, propertyId!, url),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
+      queryClient.invalidateQueries({ queryKey: ["host-property", propertyId] });
       queryClient.invalidateQueries({ queryKey: ["host-properties"] });
     },
     onError: (err: unknown) => {
@@ -44,7 +44,7 @@ export function HostListingPhotosPage() {
     mutationFn: () =>
       uploadPropertyImages(accessToken, propertyId!, files),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["property", propertyId] });
+      queryClient.invalidateQueries({ queryKey: ["host-property", propertyId] });
       queryClient.invalidateQueries({ queryKey: ["host-properties"] });
       navigate(`/properties/${propertyId}`, { replace: true });
     },
